@@ -87,6 +87,10 @@ LoKi_DTF.Variables = {
 
 where we asked to save the constrained mass, transverse momentum, and polar angle of all the particles involved in the decay.
 
+> ## Refit {.callout}
+>
+> Be careful, the refit is performed for each and every variable you have in the list. This will easily make your script rather slow, so think about the variables you really need!
+
 After this, the `LoKi::Hybrid::TupleTool` must be added to one of the branches in our decay tree (generally the mother particle):
 
 ```
