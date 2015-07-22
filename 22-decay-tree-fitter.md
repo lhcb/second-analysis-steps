@@ -29,7 +29,7 @@ myBranches = {
 }
 ```
 
-As seen in the [first-analysis-steps](https://lhcb.github.io/first-analysis-steps/), mass constraints and kinematic fitters can be applied to the decay by using the TupleToolDecayTreeFitter. In this case, some standard information concerning the mother particle and the daughters is added to the desired branch in the decay tree. However, if the daughters are not stable particles and decay further, the daughters of the daughters have no new variables associated to them. In some cases it might be useful to make this information available too. This can done by using the `DecayTreeFitter` via `LoKi functors`, as explained below.
+As seen in the [first-analysis-steps](https://lhcb.github.io/first-analysis-steps/), mass constraints and kinematic fitters can be applied to the decay by using the TupleToolDecayTreeFitter. In this case, some standard information concerning the mother particle and the daughters is added to the desired branch in the decay tree. However, if the daughters are not stable particles and decay further, the daughters of the daughters have no new variables associated to them. In some cases it might be useful to make this information available too. This can done by using the `DecayTreeFitter` via `LoKi functors`, as explained below. This new way of applying constraints has the advantage of flexibility, since the variables one wants to add to the ntuple can be individually specified.
 
 First of all, an instance of the `LoKi::Hybrid::TupleTool` must be created, here called `LoKi_DTF`.
 
@@ -99,3 +99,5 @@ tuple.addTool(LoKi_DTF)
 ```
 
 We can use a similar syntax to constrain the `e+` and `e-` to combine to form a `Psi(2S)` or another particle, if that makes sense for the analysis we are working at.
+
+To conclude, the `LoKi::Hybrid::TupleTool` provides an alternative way to apply constraints with respect to the `TupleToolDecayTreeFitter`. Which of the two approaches is the best depends on the particular situation you have to face. The former is more flexible, but the latter has the advantage of a lighter computational cost.
