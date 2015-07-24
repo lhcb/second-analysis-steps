@@ -100,4 +100,4 @@ tuple.addTool(LoKi_DTF)
 
 We can use a similar syntax to constrain the `e+` and `e-` to combine to form a `Psi(2S)` or another particle, if that makes sense for the analysis we are working at.
 
-To conclude, the `LoKi::Hybrid::TupleTool` provides an alternative way to apply constraints with respect to the `TupleToolDecayTreeFitter`. Which of the two approaches is the best depends on the particular situation you have to face. The former is more flexible, but the latter has the advantage of a lighter computational cost.
+To conclude, the `LoKi::Hybrid::TupleTool` provides an alternative way to apply constraints with respect to the `TupleToolDecayTreeFitter`. Which of the two approaches is the best depends on the particular situation you have to face. The former is more flexible, but has the disadvantage that it can be very slow if more than a few variables are added due to the fact that the kinematical refit is performed again for each functor.
