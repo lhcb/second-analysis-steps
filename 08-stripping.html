@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: First Steps in LHCb</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/first-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">First Steps in LHCb</h1>
+          <h2 class="subtitle">Introduction to the LHCb data flow</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Understand the LHCb data flow</li>
+<li>Learn the key concepts on the stripping</li>
+</ul>
+</div>
+</div>
+<p>Collisions recorded by the LHCb detector go through a very specific data flow in order to ensure the maximum data-taking efficiency and data quality. In each step, specific <a href="http://lhcb.github.io/first-analysis-steps/01-davinci.html">Gaudi</a>-based applications process the data and produce the output for the next step. The data flow is designed so the processing of real data and simulated one are as close to each other as possible, with small differences that will be discussed when applicable:</p>
+<ol style="list-style-type: decimal">
+<li>(Only in simulation) The <em>pp</em> collisions are generated using <code>Pythia</code> (currently <code>Pythia8</code>), decays of hadronic particles are described by <code>EvtGen</code> and the interaction of the generated particles with the detectors and its response are implemented using the <code>Geant</code> toolkit. The simulation step is managed by the <code>Gauss</code> application, while the digitization of the simulated events is performed by <code>Boole</code>.</li>
+<li>Data from the detector (or from <code>Boole</code>) are filtered through the <em>trigger</em>, which consists of L0, implemented in hardware, and HLT, implemented in software. The LHCb application responsible for the HLT is <code>Moore</code>, which will be discussed in further detail in the trigger lesson. In the case of real data, these are saved to disk and sent to CERN.</li>
+<li>Triggered, raw data are reconstructed to transform the detector hits into physical objects such as tracks, clusters, etc, through the <code>Brunel</code> application. These are stored into an output file in <code>DST</code> format.</li>
+<li><p>The reconstructed <code>DST</code> files are suitable for analysis, but they are not accessible to users due to computing restrictions. Data must be filtered futher through a set of selections called <em>stripping</em>, which write output either in <code>DST</code> or <code>µDST</code> format.</p>
+<div id="the-output-format" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>The output format</h2>
+</div>
+<div class="panel-body">
+<p>A <code>DST</code> file is a ROOT-format file in which the full event information (reconstructed objects, raw data, etc) is stored. This takes typically around 150kB per event, so it's very desirable to try to store smaller files. The <code>µDST</code> format was designed to achieve this purpose: in them, only the information concerning the build candidates (that is, the output of the stripping <code>SelectionSequences</code>) is stored; the raw event, which takes around 50kB per event, is discarded.</p>
+<p>Since the objects saved are just those placed in TES locations, one can build a custom output file by specifying which locations need to be saved. For example, one could save a <code>µDST</code> with raw information.</p>
+</div>
+</div></li>
+<li><p>Users can run their own analysis tools, such as <a href="http://lhcb.github.io/first-analysis-steps/09-minimal-dv-job.html"><code>DecayTreeTuple</code></a>, to extract variables useful for analysis. The processing is slightly different between <code>DST</code> and <code>µDST</code>, since some calculations, such as isolations, need the other tracks in the event (not only the signal), which are not available in the latter format.</p></li>
+</ol>
+<p>Steps 1 to 4 are performed centrally, while 5 is performed by the users. Step 3, the reconstruction, is rarely performed, only when data are taken and when a new reconstruction configuration is available. Step 4, the stripping, can be performed more often, since it runs on reconstructed data. Strippings are identified by a <code>SXrYpZ</code> version, which help identify the different types of strippings:</p>
+<ul>
+<li>The digit <code>X</code> marks the major stripping version. This marks all major <em>restrippings</em>, in which the full list of lines is processed, with or without re-reconstruction.</li>
+<li>The digit <code>Y</code> is the release version, whch was used during Run-I to mark the data type, that is, the year: 0 was used for 2012 and 1 for 2011. The legacy stripping, <code>S21</code> is used for 2012 and <code>S21r1</code> for 2011.</li>
+<li>The digit <code>Z</code> marks the patch version, which correspond to <em>incremental strippings</em>, stripping campaigns based on a major version in which only a handful of lines is run (either for bug fixes or to add new ones). In the case of incremental strippings, no re-reconstruction is performed.</li>
+</ul>
+<p>To get information on the stripping, the best resource is the <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbStripping">stripping Twiki</a>. In it we can find:</p>
+<ul>
+<li>The status of the current strippings, eg, for <a href="http://lhcbproject.web.cern.ch/lhcbproject/Reprocessing/stats-re-stripping-fall14.html">Stripping <code>S21r1</code></a>.</li>
+<li>The configuration of all strippings, eg, for <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/Stripping21Configuration">Stripping <code>S21</code></a></li>
+</ul>
+<p>Additionally, the information on all strippings can be found in the <a href="http://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/stripping/">stripping project website</a>, where you can see all the algorithms run and cuts applied in each line. For example, if we wanted to understand the <code>StrippingD2hhCompleteEventPromptDst2D2RSLine</code> line, which we used in the <a href="http://lhcb.github.io/first-analysis-steps/05-interactive-dst.html">exploring a DST</a> lesson from now on, we would go <a href="http://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/stripping/config/stripping21/charmcompleteevent/strippingd2hhcompleteeventpromptdst2d2rsline.html">here</a>.</p>
+<div id="understanding-a-stripping-line" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pencil"></span>Understanding a stripping line</h2>
+</div>
+<div class="panel-body">
+<p>Go to the <code>StrippingD2hhCompleteEventPromptDst2D2RSLine</code> line definition <a href="http://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/stripping/config/stripping21/charmcompleteevent/strippingd2hhcompleteeventpromptdst2d2rsline.html">here</a> and try to understand what do the <code>CombineParticles</code> (<code>D2hhCompleteEventPromptD2KPiSel</code> and <code>D2hhCompleteEventPromptDst2D2RSLine</code>) in there do. How are they different from the decay we built in the <a href="01-building-decays.html">Build your own decay</a> lesson? Do you understand all LoKi functors?</p>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/first-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+  </body>
+</html>

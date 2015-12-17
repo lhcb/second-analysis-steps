@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: First Steps in LHCb</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/first-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">First Steps in LHCb</h1>
+          <h2 class="subtitle">Building your own decay</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Learn the concepts behind the LHCb selection framework</li>
+<li>Build a decay chain</li>
+</ul>
+</div>
+</div>
+<p>In order to perform most physics analyses we need to build a <em>decay chain</em> with reconstructed (or MC) particles that represents the physics process we want to study. In LHCb, this decay chain can be built through <code>LHCb::Particle</code> (<code>LHCb::MCParticle</code>) objects that represent individual particles and contain links to their children, also represented by the same type of object.</p>
+<p>We'll learn all the concepts involved by running through a full example: using the DST file we downloaded in the <a href="http://lhcb.github.io/first-analysis-steps/05-files-from-grid.html">Downloading a file from the Grid</a> lesson, we will build our own <span class="math"><em>D</em><sup> * </sup> → <em>D</em><sup>0</sup>( → <em>K</em><em>π</em>)<em>π</em></span> decay chain from scratch. Get your <a href="https://lhcb.github.io/first-analysis-steps/06-loki-functors.html">LoKi skills</a> ready and let's start.</p>
+<p>The typical approach is to build the decay from the bottom up. Therefore, we need to</p>
+<ol style="list-style-type: decimal">
+<li>Get input pions and kaons and filter them according to our physics needs.</li>
+<li>Combine a pion and a kaon to build a <span class="math"><em>D</em><sup>0</sup></span>, and apply selection cuts to it.</li>
+<li>Combine this <span class="math"><em>D</em><sup>0</sup></span> with a pion to build the <span class="math"><em>D</em><sup> * </sup></span>, again filtering when necessary.</li>
+</ol>
+<p>To do that, we need to know a little bit more about how the LHCb analysis framework works. As discussed in the <a href="http://lhcb.github.io/first-analysis-steps/01-davinci.html">Gaudi introduction</a>, <code>Gaudi</code> is based on the event-by-event sequential (chained) execution of algorithms wrapped in a <code>GaudiSequencer</code>, which takes care of handling the execution order such that processing stops when an algorithm is <em>not passed</em>. However, it does not handle the data dependencies between these algorithms nor does it give easy access to them. To solve this problem, the <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/ParticleSelection">Selection Framework</a> was created, and it is based on two types of objects: <code>Selection</code> and <code>SelectionSequence</code>.</p>
+<div id="selections" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>Selections</h2>
+</div>
+<div class="panel-body">
+<p>The <code>Selection</code> is the basic unit of the framework. It uses other <code>Selections</code> to process <code>LHCb::Particles</code> and writes them to a TES location easily findable through its <code>outputLocation</code> method. Additionally, it knows about other <code>Selections</code> that it requires to pass in order to obtain input particles through its <code>RequiredSelections</code> argument. A <code>Selection</code> requires <em>all</em> of its <code>RequiredSelections</code> to pass.</p>
+<p>There are several types of selections, for example</p>
+<ul>
+<li><code>Selection</code>, the most basic class.</li>
+<li><code>MergedSelection</code>, which is used to join the output of several <code>Selection</code> objects into a single TES location.</li>
+<li><code>DataOnDemand</code> (also known as <code>AutomaticData</code>), which builds objects from their TES location using a preconfigured map of (location, algorithm) pairs.</li>
+</ul>
+</div>
+</div>
+<div id="selection-sequences" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>Selection sequences</h2>
+</div>
+<div class="panel-body">
+<p>The <code>SelectionSequence</code> takes a <code>Selection</code> object, resolves its <code>Selection</code> requirements, and builds a flat, chained and ordered list of <code>Selections</code>. It then exports (via the <code>selection</code> method) a self-contained <code>GaudiSequencer</code> with all the algorithm configurables necessary to run the selection. It also makes the output locations of the data written by the selection chain available via the <code>outputLocations</code> method.</p>
+</div>
+</div>
+<p>To get our input particles we use the <code>DataOnDemand</code> service:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> PhysSelPython.Wrappers <span class="ch">import</span> DataOnDemand
+Pions = DataOnDemand(<span class="st">&#39;Phys/StdAllNoPIDsPions/Particles&#39;</span>)
+Kaons = DataOnDemand(<span class="st">&#39;Phys/StdAllLooseKaons/Particles&#39;</span>)</code></pre>
+<div id="finding-the-correct-inputs-for-combineparticles-algorithms" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>Finding the correct inputs for <code>CombineParticles</code> algorithms</h2>
+</div>
+<div class="panel-body">
+<p>As discussed previously, the <code>DataOnDemand</code> or <code>AutomaticData</code> selection builds objects from their TES location. In Gaudi, the TES location of the output of an algorithm is generally determined as <code>Phys/ALGO_NAME/OBJECT_TYPE</code>, where <code>OBJECT_TYPE</code> refers to <code>Particles</code>, <code>Vertices</code>, etc.</p>
+<p>The <code>CommonParticles</code> package, which you can find <a href="https://svnweb.cern.ch/trac/lhcb/browser/Stripping/trunk/Phys/CommonParticles/python/CommonParticles">here</a>, allows to access premade particles with reasonable selections for us to use with <code>DataOnDemand</code>. For example, in our specific case, we use the <code>DataOnDemand</code> class with the <code>Phys/StdAllNoPIDsPions/Particles</code> and <code>Phys/StdAllLooseKaons/Particles</code> locations to access the output of the <code>StdAllNoPIDsPions</code> and <code>StdAllLooseKaons</code> algorithms, respectively:</p>
+</div>
+</div>
+<p>Once we have the input pions and kaons, we can combine them to build a <span class="math"><em>D</em><sup>0</sup></span> by means of the <code>CombineParticles</code> algorithm. This algorithm performs the combinatorics for us according to a given decay descriptor and puts the resulting particle in the TES, allowing also to apply some cuts on them:</p>
+<ul>
+<li><p><code>DaughtersCuts</code> is a dictionary that maps each child particle type to a LoKi particle functor that determines if that particular particle satisfies our selection criteria. Optionally, one can specify also a <code>Preambulo</code> property that allows us to make imports, preprocess functors, etc (more on this in the <a href="https://lhcb.github.io/first-analysis-steps/06-loki-functors.html">LoKi functors</a> lesson). For example:</p>
+<pre class="sourceCode python"><code class="sourceCode python">d0_daughters = {
+  <span class="st">&#39;pi-&#39;</span>: <span class="st">&#39;(PT &gt; 750*MeV) &amp; (P &gt; 4000*MeV) &amp; (MIPCHI2DV(PRIMARY) &gt; 4)&#39;</span>,
+  <span class="co">&#39;K+&#39;</span>: <span class="st">&#39;(PT &gt; 750*MeV) &amp; (P &gt; 4000*MeV) &amp; (MIPCHI2DV(PRIMARY) &gt; 4)&#39;</span>
+}</code></pre></li>
+<li><p><code>CombinationCut</code> is a particle array LoKi functor (note the <code>A</code> prefix, see more <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/LoKiHybridFilters#Particle_Array_Functors">here</a>) that is given the array of particles in a single combination (the <em>children</em>) as input (in our case a kaon and a pion). This cut is applied before the vertex fit so it is typically used to save CPU time by performing some sanity cuts such as <code>AMAXDOCA</code> or <code>ADAMASS</code> before the CPU-consuming fit:</p>
+<pre class="sourceCode python"><code class="sourceCode python">d0_comb = <span class="st">&quot;(AMAXDOCA(&#39;&#39;) &lt; 0.2*mm) &amp; (ADAMASS(&#39;D0&#39;) &lt; 100*MeV)&quot;</span></code></pre></li>
+<li><p><code>MotherCut</code> is a selection LoKi particle functor that acts on the particle produced by the vertex fit (the <em>parent</em>) from the input particles, which allows to apply cuts on those variables that require a vertex, for example:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># We can split long selections across multiple lines</span>
+d0_mother = (
+  <span class="st">&#39;(VFASPF(VCHI2/VDOF)&lt; 9)&#39;</span>
+  <span class="co">&#39;&amp; (BPVDIRA &gt; 0.9997)&#39;</span>
+  <span class="co">&quot;&amp; (ADMASS(&#39;D0&#39;) &lt; 70*MeV)&quot;</span>
+)</code></pre></li>
+</ul>
+<p>Then, we can build a combiner as</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> Configurables <span class="ch">import</span> CombineParticles
+d0 = CombineParticles(
+    <span class="st">&#39;Combine_D0&#39;</span>,
+    DecayDescriptor=<span class="st">&#39;([D0 -&gt; pi- K+]CC)&#39;</span>,
+    DaughtersCuts=d0_daughters,
+    CombinationCut=d0_comb,
+    MotherCut=d0_mother
+)</code></pre>
+<p>Now we have to build a <code>Selection</code> out of it so we can later on put all pieces together:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> PhysSelPython.Wrappers <span class="ch">import</span> Selection
+d0_sel = Selection(
+    <span class="st">&#39;Sel_D0&#39;</span>,
+    Algorithm=d0,
+    RequiredSelections=[Pions, Kaons]
+)</code></pre>
+<p>This two-step process for building the <code>Selection</code> (creating an algorithm and building a selection with it) can be simplified by using a helper function in the <code>PhysSelPython.Wrappers</code> module, called <code>SimpleSelection</code>. It gets a selection name, the algorithm type we want to run, the inputs and any other parameters that need to be passed to the algorithm (as keyword arguments), and returns a <code>Selection</code> object build in the same two-step way. With that in mind, we can rewrite the previous two pieces of code as</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">import</span> GaudiConfUtils.ConfigurableGenerators <span class="ch">as</span> ConfigurableGenerators
+<span class="ch">from</span> PhysSelPython.Wrappers <span class="ch">import</span> SimpleSelection
+d0_sel = SimpleSelection(
+    <span class="st">&#39;Sel_D0&#39;</span>,
+    ConfigurableGenerators.CombineParticles,
+    [Pions, Kaons],
+    DecayDescriptor=<span class="st">&#39;([D0 -&gt; pi- K+]CC)&#39;</span>,
+    DaughtersCuts=d0_daughters,
+    CombinationCut=d0_comb,
+    MotherCut=d0_mother
+)</code></pre>
+<p>Note how we needed to use the <code>CombineParticles</code> from <code>GaudiConfUtils.ConfigurableGenerators</code> instead of the <code>PhysSelPython.Wrappers</code> one to make this work. This is because the LHCb algorithms are configured as singletons and it is mandatory to give them a name, which we don't want to in <code>SimpleSelection</code> (we want to skip steps!).</p>
+<div id="the-lhcb-singletons" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>The LHCb singletons</h2>
+</div>
+<div class="panel-body">
+<p>If we had tried to simply use <code>CombineParticles</code> inside our <code>SimpleSelection</code>, we would have seen it fail with the following error</p>
+<pre class="output"><code>NameError: Could not instantiate Selection because input Configurable CombineParticles has default name. This is too unsafe to be allowed.</code></pre>
+<p>The reason for this is that all LHCb algorithms need an explicit and unique name because they are <em>singletons</em>, and therefore an exception is thrown if we don't do that. A <a href="http://en.wikipedia.org/wiki/Singleton_pattern">singleton</a> is a software design pattern that restricts the instantiation of a class to one object. In our case, only one algorithm with a given name can be instantiated. This allows to reuse and reload algorithms that have already been created in the configuration sequence, eg, we could have reloaded the <code>&quot;Combine_D0&quot;</code> <code>CombineParticles</code> by name and modified it (even in another file loaded in the same <code>gaudirun.py</code> call!):</p>
+<pre class="sourceCode python"><code class="sourceCode python">d0_copy = CombineParticles(<span class="st">&#39;Combine_D0&#39;</span>)
+<span class="dt">print</span> d0_copy.DecayDescriptor</code></pre>
+<p>This is very useful to build complicated configuration chains.</p>
+<p>The solution for the <code>SimpleSelection</code> problem, in which we actually don't care about the <code>CombineParticles</code> name, is the <code>GaudiConfUtils.ConfigurableGenerators</code> package: it contains wrappers around algorithms such as <code>CombineParticles</code> or <code>FilterDesktop</code> allowing them to be instantiated without an explicit name argument.</p>
+</div>
+</div>
+<p>Now we can use another <code>CombineParticles</code> to build the <span class="math"><em>D</em><sup> * </sup></span> with pions and the <span class="math"><em>D</em><sup>0</sup></span>'s as inputs, and applying a filtering only on the soft pion:</p>
+<pre class="sourceCode python"><code class="sourceCode python">dstar_daughters = {
+  <span class="st">&#39;pi+&#39;</span>: <span class="st">&#39;(TRCHI2DOF &lt; 3) &amp; (PT &gt; 100*MeV)&#39;</span>
+}
+dstar_comb = <span class="st">&quot;(ADAMASS(&#39;D*(2010)+&#39;) &lt; 400*MeV)&quot;</span>
+dstar_mother = (
+    <span class="st">&quot;(abs(M-MAXTREE(&#39;D0&#39;==ABSID,M)-145.42) &lt; 10*MeV)&quot;</span>
+    <span class="co">&#39;&amp; (VFASPF(VCHI2/VDOF)&lt; 9)&#39;</span>
+)
+dstar_sel = SimpleSelection(
+    <span class="st">&#39;Sel_Dstar&#39;</span>,
+    ConfigurableGenerators.CombineParticles,
+    [d0_sel, Pions],
+    DecayDescriptor=<span class="st">&#39;[D*(2010)+ -&gt; D0 pi+]cc&#39;</span>,
+    DaughtersCuts=dstar_daughters,
+    CombinationCut=dstar_comb,
+    MotherCut=dstar_mother
+)</code></pre>
+<div id="building-shared-selections" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>Building shared selections</h2>
+</div>
+<div class="panel-body">
+<p>In some cases we may want to build several decays in the same script with some common particles/selection; for example, in our case we could have been building <span class="math"><em>D</em><sup>0</sup> → <em>K</em><em>K</em></span> in the same script, and then we would have wanted to select the soft pion in the same way when building the <span class="math"><em>D</em><sup> * </sup></span>. In this situation, we can make use of the <code>FilterDesktop</code> algorithm, which takes a TES location and filters the particles inside according to a given LoKi functor in the <code>Code</code> property, which then can be given as input to a <code>Selection</code>:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> Configurables <span class="ch">import</span> FilterDesktop
+soft_pion = FilterDesktop(<span class="st">&#39;Filter_SoftPi&#39;</span>,
+                          Code=<span class="st">&#39;(TRCHI2DOF &lt; 3) &amp; (PT &gt; 100*MeV)&#39;</span>)
+soft_pion_sel = Selection(<span class="st">&#39;Sel_SoftPi&#39;</span>,
+                          Algorithm=soft_pion,
+                          RequiredSelections=[Pions])
+dstar = CombineParticles(
+    <span class="st">&#39;CombineDstar&#39;</span>,
+    DecayDescriptor=<span class="st">&#39;[D*(2010)+ -&gt; D0 pi+]cc&#39;</span>,
+    CombinationCut=<span class="st">&quot;(ADAMASS(&#39;D*(2010)+&#39;) &lt; 400*MeV)&quot;</span>,
+    MotherCut=(
+        <span class="st">&quot;(abs(M-MAXTREE(&#39;D0&#39;==ABSID,M)-145.42) &lt; 10*MeV)&quot;</span>
+        <span class="co">&#39;&amp; (VFASPF(VCHI2/VDOF)&lt; 9)&#39;</span>
+    )
+)
+dstar_sel = Selection(
+    <span class="st">&#39;Sel_Dstar&#39;</span>,
+    Algorithm=dstar,
+    RequiredSelections=[d0_sel, soft_pion_sel]
+)</code></pre>
+<p>This allows us to save time by performing the filtering of the soft pions only once, and to keep all the common cuts in a single place, avoiding duplication of code.</p>
+</div>
+</div>
+<p>We can now build build a <code>SelectionSequence</code> to add to the <code>DaVinci</code> execution sequence</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> PhysSelPython.Wrappers <span class="ch">import</span> SelectionSequence
+dstar_seq = SelectionSequence(<span class="st">&#39;Dstar_Seq&#39;</span>, TopSelection=dstar_sel)
+<span class="ch">from</span> Configurables <span class="ch">import</span> DaVinci
+DaVinci().UserAlgorithms += [dstar_seq.sequence()]</code></pre>
+<div id="debugging-your-selection-chain" class="callout panel panel-info">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pushpin"></span>Debugging your selection chain</h2>
+</div>
+<div class="panel-body">
+<p>The <code>PhysSelPython.Wrappers</code> offers a very useful utility for debugging your selection chains, called <code>PrintSelection</code>. It gets a <code>Selection</code> as input and it can be used the same way, except it will print the decay tree everytime making use of the <code>PrintDecayTree</code> algorithm which was discussed in the <a href="http://lhcb.github.io/first-analysis-steps/05-interactive-dst.html">Exploring a DST</a> lesson.</p>
+<p>For more complex debugging, one can setup <code>DaVinci</code> with <code>graphviz</code> (see more details <a href="http://www.graphviz.org">here</a>)</p>
+<pre class="shell"><code>SetupDaVinci --use &quot;graphviz v* LCG_Interfaces&quot;</code></pre>
+<p>and create a graph representation of the sequence of algorithms and their dependencies:</p>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> SelPy.graph <span class="ch">import</span> graph
+graph(dstar_sel, <span class="dt">format</span>=<span class="st">&#39;png&#39;</span>)</code></pre>
+<p><img src="./img/Sel_Dstar.png" alt="Dstar selection graph" style="width: 500px;"/></p>
+<p>Note that currently it is not possible to load <code>graphviz</code> with <code>lb-run</code>, but it is expected it will be possible in the near future.</p>
+</div>
+</div>
+<div id="work-to-do" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2><span class="glyphicon glyphicon-pencil"></span>Work to do</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Finish the script (the base of which can be found <a href="code/06-building-decays/build_decays.py">here</a>) by adapting the basic <code>DaVinci</code> configuration from its corresponding <a href="http://lhcb.github.io/first-analysis-steps/09-minimal-dv-job.html">lesson</a> and check the output ntuple.</li>
+<li>Replace the <code>&quot;Combine_D0&quot;</code> and <code>&quot;Sel_D0&quot;</code> objects by a single <code>SimpleSelection</code>.</li>
+<li>Do you know what the used LoKi functors (<code>AMAXDOCA</code>, <code>ADAMASS</code>, <code>MIPCHI2DV</code>, etc) do?</li>
+<li>Add a <code>PrintSelection</code> in your selections and run again.</li>
+<li>Create a <code>graph</code> of the selection.</li>
+</ul>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/first-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+  </body>
+</html>
