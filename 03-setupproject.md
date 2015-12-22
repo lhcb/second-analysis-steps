@@ -2,7 +2,7 @@
 layout: page
 title: First Steps in LHCb
 subtitle: Building your own TupleTool
-minutes: xy
+minutes: 30
 ---
 
 > ## Learning Objectives {.objectives}
@@ -23,8 +23,6 @@ minutes: xy
 > DaVinci`. The author prefers the former, since the former works better along
 > with tab-completion and can be typed `Se<tab>D<tab>`.
 
-## prepare the place to work in
-
 To create a directory where you can compile your own TupleTools (and any other
 DaVinci tool and algorithm), which will then be found by `ganga` and the
 `SetupDaVinci` command to run it, use
@@ -36,7 +34,7 @@ SetupDaVinci --build-env vVVrR
 where you have to replace `vVVrR` by your desired version number. You now have
 a new directory `$(HOME)/cmtuser/DaVinci_vVVrR` and also moved there.
 
-## check out the package you want to build
+Checking out a packages should be familiar from previous lessons (put link here)
 
 From the top level directory of your project (i.e. the directory which just got
 created) call `getpack` to obtain your local copy of the source code. (In fact
@@ -89,9 +87,7 @@ means *jobs* and `4` is the number of concurrent jobs)
 > compiling software, not for running it. To be on the safe side (cleaning up
 > your environment), run your new DaVinci in a new shell.
 
-## Running your own DaVinci
-
-Call for curiosity
+Observe how `SetupProject` is now aware of your private software version.
 
 ```shell
 SetupDaVinci --list-versions
