@@ -52,23 +52,25 @@ getpack Phys/DecayTreeTuple
 > are already included in DaVinci. You might need to compile them yourself
 > because you want to change something, in this case you're `getpack`'ing an
 > official package. But there is also the possiblity that you want to add your
-> own analysis package to your own DaVinci installation. In this case, DaVinci
-> needs to be told that it has a new package. Easiest by adding it to the
-> dependency definition of DaVinci.
->
-> ```shell getpack Phys/DaVinci vVVrR cd Phys/DaVinci/cmt ls ```
->
-> In this directory there is a file `requirements. You add your package (assume
-> it is called `Phys/BsToKMuNu`) by adding the line
->
-> ``` use   BsToKMuNu        v*    Phys ```
+> own analysis package to your own DaVinci installation. For running
+> interactive jobs on lxplus, there's nothing special to be done, for
+> submission to the grid with ganga, the ganga job needs to know about your
+> setup of packages. If you have only one analysis package, say
+> `Phys/BsToKMuNu` it is sufficient if you have
+> ```use DaVinci v* Phys```
+> in the `Phys/BsToKMuNu/cmt/requirements` file. If you have multiple private
+> packages, make one of them the top level which depends on all the others by
+> adding
+> ```use NotTopLevel v* Phys```
+> to `Phys/TopLevel/cmt/requirements`. 
+
 
 Once you have all the packages checked out (and added your new tools and
 modified the code you want to modify), the build system needs to figure out how
 your local DaVinci is composed, what needs to be compiled, etc.
 
 ```shell
-cd Phys/DaVinci/cmt
+cd Phys/BsToKMuNu/cmt
 cmt br cmt config
 ```
 
@@ -80,6 +82,11 @@ cmt br cmt make
 
 (compile several files in parallel with the additional option `-j4`, where `j`
 means *jobs* and `4` is the number of concurrent jobs)
+
+> ## make ganga know which is the top level {.callout}
+> 
+> A ganga job gets told about your top level project by specifying
+> ```job.application = DaVinci(version = "v39r1", masterpackage="Phys/BsToKMuNu")```
 
 > ## SetupProject is funny {.callout}
 >
