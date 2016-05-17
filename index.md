@@ -22,6 +22,7 @@ If you have any problems or questions, you can [send an email to
 1. [Introduction to the LHCb data flow](08-stripping.html)
 1. [Switch to a new stripping (20 -> 21) for one line in MC](14-rerun-stripping.html)
 1. [Replace a mass hypothesis](17-switch-mass-hypo.html)
+1. [Reuse particles from a decay tree](18-filter-in-trees.html)
 1. [HLT intro](18-hlt-intro.html)
 1. [TisTos DIY](18-tistos-diy.html)
 
