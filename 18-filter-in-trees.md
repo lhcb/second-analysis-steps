@@ -15,7 +15,7 @@ To do that, we need to put the particles we're interested in in a new container 
 To achieve this we can use the `FilterInTrees` algorithm, a simple variation of `FilterDesktop` ([doxygen](https://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/hlt/latest_doxygen/de/d8e/class_filter_in_trees.html)).
 
 Let's start from the example in [the selection framework lesson](https://lhcb.github.io/second-analysis-steps/01-building-decays.html) and let's check that the $\pi^-$ child of the $D^0$ does not come from a $\rho\to\pi^+\pi^-$.
-To do that, we have to extract the $\pi^-$ from `([D0 -> pi- K+]CC)` and combine it with all pions in `Phys/StdAllNoPIDsPions/Particles`.
+To do that, we have to extract the $\pi^-$ from `([D0 -> pi+ K-]CC)` and combine it with all pions in `Phys/StdAllNoPIDsPions/Particles`.
 
 Using `FilterInTrees` is done in the same way we would use `FilterDesktop`:
 
@@ -24,7 +24,7 @@ from Configurables import FilterInTrees
 from PhysSelPython.Wrappers import Selection, DataOnDemand
 
 decay_tree_location = '/Event/AllStreams/Phys/D2hhCompleteEventPromptDst2D2RSLine/Particles'
-d0_from_dst = FilterInTrees('d0_from_dst_filter', Code="DECTREE('[Charm -> pi- K+]CC')")
+d0_from_dst = FilterInTrees('d0_from_dst_filter', Code="DECTREE('[Charm -> pi+ K-]CC')")
 d0_from_dst_sel = Selection("d0_from_dst_sel",
                             Algorithm=d0_from_dst,
                             RequiredSelections=[AutomaticData(Location=decay_tree_location)])
@@ -34,7 +34,7 @@ pions_from_d0_sel = Selection("pions_from_d0_sel",
                               RequiredSelections=[d0_from_dst_sel])
 ```
 
-The output of `pion_sel` is a container with all the pions coming from the $D^0$.
+The output of `pions_from_d0_sel` is a container with all the pions coming from the $D^0$.
 
 > ## Question {.callout}
 > Do you see why we couldn't use something simple like
@@ -46,7 +46,7 @@ pions_from_d0 = FilterInTrees('pions_from_d0_filter', Code="'pi+' == ABSID")
 Note how we had to do the process in two steps in order to avoid getting the soft pion from the $D^*$.
 Sometimes this makes things quite difficult, but almost all problems can be solved with a smart use of the `DECTREE` container in an intermediate step.
 
-> ## Selecting the soft photon {.challenge}
+> ## Selecting the soft pion {.challenge}
 > Can you find of a way of selecting the soft pion?
 > Hint: use the `FilterDecays` algorithm, in which you specify a decay descriptor as `Code`, marking the desired particle(s).
 
@@ -66,11 +66,11 @@ rho_sel = Selection('rho_sel',
                     RequiredSelections=[pions_from_d0_sel, Pions])
 ```
 
-Unfortunately, the `CombineParticles` example we just wrote is wrong, since it will actually build $\rho$ from all pions it gets as input, not using one from our `pions_from_d0` selection and one from `'Phys/StdAllNoPIDsPions/Particles'`.
+Unfortunately, the `CombineParticles` example we just wrote is not exactly what we meant, since it will actually build $\rho$ from all pions it gets as input, not using one from our `pions_from_d0` selection and one from `'Phys/StdAllNoPIDsPions/Particles'`.
 How to solve this?
 We have to get creative and use the tools at hand:
 for example, we could use `SubstitutePID` from the previous lesson to change the PID of the pions in the `pions_from_d0` selection to kaon and build `[rho(770)0 -> K+ pi-]CC` and then change again the PID of the kaon to a pion.
-Any other ideas?
+Of course, if we were reconstructing $K^{*}(892)^{0} \to K^{-}\pi^{+}$ with `Phys/StdAllLooseKaons/Particles` instead, for example, we would already have everything we need since the ambiguity wouldn't exist.
 
 > ## An interesting detail {.callout}
 > One can use `FilterInTrees` and `FilterDecays` to select several particles at once and obtain a flattened list.
