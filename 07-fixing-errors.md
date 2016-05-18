@@ -117,3 +117,111 @@ Sel_Dstar         SUCCESS Number of counters : 14
 ```
 
 And we would get suspicious about the `MotherCut`...
+
+The final trick is to use the `StoreExplorerAlg`, which shows us the state of the TES in the middle of execution.
+We can configure it very easily and insert it in the DaVinci sequence to see what is happening.
+
+```python
+from Configurables import StoreExplorerAlg
+
+DaVinci().UserAlgorithms += [StoreExplorerAlg("Before"),
+                             dstar_seq.sequence(),
+                             StoreExplorerAlg("After")]
+```
+
+And then run it:
+
+```
+EventSelector     SUCCESS Reading Event record 1. Record number within stream 1: 1
+Before               INFO ========= /Event[0x224961d0@EventDataSvc]:
+Before               INFO +--> /Event [Address: CLID=0x1 Type=0x2]  DataObject
+Before               INFO | +--> /Gen [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /MC [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Link [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /pSim [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Rec [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Trigger [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Muon [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Rich [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Other [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /pRec [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Prev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /PrevPrev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Next [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /NextNext [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /DAQ [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--> /Strip [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO   +--> /AllStreams [Address: CLID=0x1 Type=0x2]  (Unloaded)
+...
+After                INFO ========= /Event[0x224961d0@EventDataSvc]:
+After                INFO +--> /Event [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | +--> /Gen [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /MC [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Link [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /pSim [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Rec [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--> /Header [Address: CLID=0x69 Type=0x2]  LHCb::RecHeader
+After                INFO | | +--> /Status [Address: CLID=0x1389 Type=0x2]  (Unloaded)
+After                INFO | | +--> /Summary [Address: CLID=0x6a Type=0x2]  (Unloaded)
+After                INFO | | +--> /ProtoP [No Address]  DataObject
+After                INFO | | | +--> /Charged [No Address]  KeyedContainer<LHCb::ProtoPartic [38]
+After                INFO | | +--> /Muon [No Address]  DataObject
+After                INFO | | | +--> /MuonPID [No Address]  KeyedContainer<LHCb::MuonPID,Con [27]
+After                INFO | | +--> /Track [No Address]  DataObject
+After                INFO | | | +--> /Best [No Address]  KeyedContainer<LHCb::Track,Conta [70]
+After                INFO | | +--> /Rich [No Address]  DataObject
+After                INFO | | | +--> /PIDs [No Address]  KeyedContainer<LHCb::RichPID,Con [46]
+After                INFO | | +--> /Vertex [No Address]  DataObject
+After                INFO | |   +--> /Primary [No Address]  KeyedContainer<LHCb::RecVertex,C [2]
+After                INFO | +--> /Trigger [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--> /RawEvent [Address: CLID=0x3ea Type=0x2]  LHCb::RawEvent
+After                INFO | +--> /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Muon [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Rich [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Other [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /pRec [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--> /Track [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--> /Best [Address: CLID=0x60e Type=0x2]  LHCb::PackedTracks
+After                INFO | | | +--> /Muon [Address: CLID=0x60e Type=0x2]  (Unloaded)
+After                INFO | | +--> /Rich [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--> /PIDs [Address: CLID=0x619 Type=0x2]  LHCb::PackedRichPIDs
+After                INFO | | +--> /Muon [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--> /MuonPID [Address: CLID=0x623 Type=0x2]  LHCb::PackedMuonPIDs
+After                INFO | | +--> /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | | +--> /ProtoP [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--> /Charged [Address: CLID=0x610 Type=0x2]  LHCb::PackedProtoParticles
+After                INFO | | | +--> /Neutrals [Address: CLID=0x610 Type=0x2]  (Unloaded)
+After                INFO | | +--> /Vertex [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--> /Primary [Address: CLID=0x611 Type=0x2]  LHCb::PackedRecVertices
+After                INFO | |   +--> /V0 [Address: CLID=0x612 Type=0x2]  (Unloaded)
+After                INFO | +--> /Prev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /PrevPrev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /Next [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /NextNext [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /DAQ [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--> /ODIN [No Address]  LHCb::ODIN
+After                INFO | +--> /Strip [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--> /AllStreams [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO   +--> /Phys [No Address]  DataObject
+After                INFO   | +--> /StdAllNoPIDsPions [No Address]  DataObject
+After                INFO   | | +--> /Particles [No Address]  KeyedContainer<LHCb::Particle,Co [16]
+After                INFO   | | +--> /decayVertices [No Address]  KeyedContainer<LHCb::Vertex,Cont [0]
+After                INFO   | | +--> /Particle2VertexRelations [No Address]  LHCb::Relation1D<LHCb::Particle,
+After                INFO   | | +--> /_RefitPVs [No Address]  KeyedContainer<LHCb::RecVertex,C [0]
+After                INFO   | +--> /StdAllLooseKaons [No Address]  DataObject
+After                INFO   | | +--> /Particles [No Address]  KeyedContainer<LHCb::Particle,Co [7]
+After                INFO   | | +--> /decayVertices [No Address]  KeyedContainer<LHCb::Vertex,Cont [0]
+After                INFO   | | +--> /Particle2VertexRelations [No Address]  LHCb::Relation1D<LHCb::Particle,
+After                INFO   | | +--> /_RefitPVs [No Address]  KeyedContainer<LHCb::RecVertex,C [0]
+After                INFO     +--> /Sel_D0 [No Address]  DataObject
+After                INFO       +--> /Particles [No Address]  KeyedContainer<LHCb::Particle,Co [0]
+```
+
+Here we can see where our decays are being put and we can debug problems with inputs and outputs.
+It can also be useful to know where things are written for accessing them interactively, if we want to further explore and debug.
+
+> ## Configuring the algorithm {.callout}
+>
+> The `StoreExplorerAlg` has the same print frequency as `DaVinci`, but it can be configured by modifying `PrintFreq` (fraction of events that are printed) or `PrintEvt`.
+> Have a look at the [class Doxygen](http://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/moore/releases/v14r2p5/doxygen/d2/d3b/class_store_explorer_alg.html) to see what they do.
