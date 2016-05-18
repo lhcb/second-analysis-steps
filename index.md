@@ -33,7 +33,6 @@ developed][second-ana-repo], or you can [send an email to
 1. [Replace a mass hypothesis](17-switch-mass-hypo.html)
 1. [HLT intro](18-hlt-intro.html)
 1. [TisTos DIY](18-tistos-diy.html)
-1. [Managing files in Ganga](01-managing-files-with-ganga.html)
 
 ## Other Resources
 
