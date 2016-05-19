@@ -131,7 +131,7 @@ You can then confirm that you have a `_2M` branch in your output ROOT file.
 > This is a workaround and is not a permanent solution. You have to be careful 
 > when using this method, as things other than Ganga also look in `~/cmtuser` 
 > for existing projects when building and configuring. The `lb-dev` tool is one 
-> of these things. The folder in `~/cmtconfig` **should be deleted after 
+> of these things. The folder in `~/cmtuser` **should be deleted after 
 > submitting the job** in Ganga to stop it interfering with anything else.
 
 [first-ganga]: 01-managing-files-with-ganga.html
