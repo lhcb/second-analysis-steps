@@ -81,22 +81,26 @@ $ make -j8
 $ make install
 ```
 
-This will create a folder called `a`. It is this folder that Ganga needs to 
-know about to use the local project. We will create a [symbolic link][symlink] 
-to this folder in the place that Ganga looks.
+This will create a folder called `InstallArea`. Ganga needs to 
+know about this folder a couple of others to use the local project. We will create [symbolic links][symlink] 
+to these folders in the place that Ganga looks.
 
 ```shell
 $ mkdir -p ~/cmtuser/DaVinci_v40r1p3
 $ cd ~/cmtuser/DaVinci_v40r1p3
+$ ln -s ~/DaVinciDev_v40r1p3/cmt
+$ ln -s ~/DaVinciDev_v40r1p3/DaVinciDevSys
 $ ln -s ~/DaVinciDev_v40r1p3/InstallArea
 $ ls -la
 drwxr-xr-x.  2 username z5 2048 May 19 09:05 .
 drwxr-xr-x.  2 username z5 2048 May 19 09:05 ..
+lrwxr-xr-x.  1 username z5   58 May 19 09:05 cmt -> /afs/cern.ch/user/a/apearce/DaVinciDev_v40r1p3/cmt
+lrwxr-xr-x.  1 username z5   58 May 19 09:05 DaVinciDevSys -> /afs/cern.ch/user/a/apearce/DaVinciDev_v40r1p3/DaVinciDevSys
 lrwxr-xr-x.  1 username z5   58 May 19 09:05 InstallArea -> /afs/cern.ch/user/a/apearce/DaVinciDev_v40r1p3/InstallArea
 ```
 
-You can see the link in the output of `ls -la`: the arrow `->` says that 
-`InstallArea` is a link to our `InstallArea` created by `lb-dev`.
+You can see the link in the output of `ls -la`. For example, the arrow `->` 
+says that `InstallArea` is a link to our `InstallArea` created by `lb-dev`.
 
 Now we can proceed as usual, defining a job running DaVinci in Ganga.
 
@@ -113,7 +117,7 @@ j.outputfiles = [LocalFile('*.root')]
 j.submit()
 ```
 
-Confirm that you have a `_2M` branch in your output ROOT file.
+You can then confirm that you have a `_2M` branch in your output ROOT file.
 
 > ## You know what to do {.challenge}
 >
@@ -121,13 +125,14 @@ Confirm that you have a `_2M` branch in your output ROOT file.
 > some data to run over. You know how to write options files so you can do this 
 > yourself. You could re-use an options file that we made previously, and use 
 > the same data.
+
+> ## Warning {.callout}
 >
-> You can use an options file defining the input data to set the `inputdata` 
-> property of a job:
->
-> ```
-> j.inputdata = j.application.readInputData('/path/to/data_options.py')
-> ```
+> This is a workaround and is not a permanent solution. You have to be careful 
+> when using this method, as things other than Ganga also look in `~/cmtuser` 
+> for existing projects when building and configuring. The `lb-dev` tool is one 
+> of these things. The folder in `~/cmtconfig` **should be deleted after 
+> submitting the job** in Ganga to stop it interfering with anything else.
 
 [first-ganga]: 01-managing-files-with-ganga.html
 [ganga-lbdev]: https://github.com/ganga-devs/ganga/issues/73
