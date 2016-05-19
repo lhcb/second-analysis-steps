@@ -75,7 +75,7 @@ decision. This can be done using the `decision` member function of a
 
 ~~~ {.python}
 reports = evt['Hlt1/DecReports']
-report = reports.decReport('Hlt1TrackAllL0Decision')
+report = reports.decReport('Hlt1TrackMVADecision')
 print report.decision()
 ~~~
 
