@@ -266,6 +266,16 @@ Gaudi-based jobs where:
 3. We want to job output to be download locally automatically when the job 
    completes.
 
+> ## Defining inputfiles {.callout}
+> The `inputfiles` attribute of a `Job` object works in a similar way to 
+> `outputfile`. In our example, the reverser script that the `Executable` 
+> application uses doesn't know how to handle things specified as `inputdata`, 
+> so we had to use `File` when defining the arguments.
+>
+> For LHCb applications, you will almost always define the `inputdata` list 
+> using either `LocalFile` or `DiracFile` objects. Which one you will use just 
+> depends on where the input files are.
+
 [batch]: http://information-technology.web.cern.ch/services/batch
 [da-archive]: https://groups.cern.ch/group/lhcb-distributed-analysis/default.aspx
 [ganga-issues]: https://github.com/ganga-devs/ganga
