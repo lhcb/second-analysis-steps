@@ -37,6 +37,7 @@ developed][second-ana-repo], or you can [send an email to
 1. [HLT intro](18-hlt-intro.html)
 1. [TisTos DIY](18-tistos-diy.html)
 1. [Managing files in Ganga](01-managing-files-with-ganga.html)
+1. [Using Ganga with local projects](01-ganga-with-cmake.html)
 
 ## Other Resources
 
