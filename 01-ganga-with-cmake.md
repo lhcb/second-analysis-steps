@@ -22,7 +22,7 @@ with `lb-dev` when you run an application.
 In this lesson, we will go through a workaround that will allow you to use 
 local projects with Ganga jobs, wherever they run.
 
-> ## How things used to be {.objectives}
+> ## How things used to be {.callout}
 >
 > Before `lb-dev` was available, local projects would conventionally live in 
 > the `~/cmtuser` folder. A local DaVinci v36r5 project, for example, would be 
