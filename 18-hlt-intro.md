@@ -1,8 +1,8 @@
 ---
 layout: page
-title: First steps in LHCb
+title: Second steps in LHCb
 subtitle: HLT intro
-minutes: 45
+minutes: 75
 ---
 
 > ## Learning Objectives {.objectives}
