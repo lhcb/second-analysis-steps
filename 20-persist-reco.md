@@ -15,10 +15,11 @@ Now we want to use the PersistReco to make something more from the candidates,
 in this case a D* -> (D0 -> K pi) pi.
 
 Create a new script, `turbo_persistreco.py`, based on `turbo_intro.py` from the
-previous lesson to contain your configuration.
+[lesson about turbo ](19-turbo.html) to contain your configuration.
 
 There are some general options needed to configure DaVinci to recreate the
 particles created in the HLT.
+
 ~~~ {.python}
 # Turbo with PersistReco
 from Configurables import DstConf, TurboConf
@@ -31,8 +32,10 @@ them.
 
 > ## Persisted Particles {.challenge}
 >
-> Use a GaudiPython script to find out which particles are persisted from the
-> online reconstruction.
+> Use a GaudiPython script inspired by
+> [another lesson](http://lhcb.github.io/first-analysis-steps/05-interactive-dst.html)
+> to find out which particles are persisted from the
+> online reconstruction by exploring the transient event store.
 
 ~~~ {.python}
 # Get the D0 and the pions
@@ -50,6 +53,7 @@ dst = CombineParticles(
 ~~~
 
 To run our combination, we create a selection and a selection sequence.
+
 ~~~ {.python}
 dst_sel = Selection(
     'Sel_DstToD0pi',
