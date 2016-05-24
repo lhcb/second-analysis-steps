@@ -148,4 +148,6 @@ Add a title for your merge request and explain what you've done in the main text
 >  - Now, try to resolve the merge conflict.
 >    This is a bit complicated because of the way the local repository is set up.
 >    Take a look at [https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Replacement_for_svn_update_in_lo](https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Replacement_for_svn_update_in_lo) for pointers.
+>  - An alternative way is to rely on pure git commands. This usually works better.
+>    Take a look here [https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Merge_conflict_in_gitlab](https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Merge_conflict_in_gitlab)
 
