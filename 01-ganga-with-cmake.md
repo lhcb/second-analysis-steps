@@ -31,7 +31,7 @@ local projects with Ganga jobs, wherever they run.
 > would then pick up the local version of DaVinci, similarly to how the `./run` 
 > command does things today.
 >
-> Ganga now supports lb-dev packages, so this systle of use is depricated as of
+> Ganga now supports lb-dev packages, so this style of use is deprecated as of
 > version 6.2, and will quickly become unsupported.
 
 We will create a local version of DaVinci with some modified algorithm, so that 
