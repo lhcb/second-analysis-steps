@@ -15,12 +15,6 @@ gives some advice about choosing a Ganga version, making a clean environment
 for running Ganga in, and where to go to get help when things in Ganga go 
 wrong.
 
-The `lb-dev` command allows you to start hacking on LHCb code very quickly. The 
-downside is that Ganga does not yet support the use of local projects created 
-with `lb-dev` when you run an application.
-
-In this lesson, we will go through a workaround that will allow you to use 
-local projects with Ganga jobs, wherever they run.
 
 > ## How things used to be {.callout}
 >
@@ -31,7 +25,7 @@ local projects with Ganga jobs, wherever they run.
 > would then pick up the local version of DaVinci, similarly to how the `./run` 
 > command does things today.
 >
-> Ganga now supports lb-dev packages, so this style of use is deprecated as of
+> Ganga now supports lb-dev packages, so the `SetupProject` style of use is deprecated as of
 > version 6.2, and will quickly become unsupported.
 
 We will create a local version of DaVinci with some modified algorithm, so that 
@@ -75,8 +69,7 @@ $ make -j8
 $ make install
 ```
 
-This will create a folder called `InstallArea`. Ganga needs to 
-know about the local project.
+This will create a folder called `InstallArea`. This is the folder that Ganga will provide on the Grid.
 
 Now we can proceed as usual, defining a job running DaVinci in Ganga. But instead of
 using the built in version of our app (`DaVinci()`), we will use `GaudiExec()` to make a 
@@ -97,11 +90,19 @@ j.outputfiles = [LocalFile('*.root')]
 j.submit()
 ```
 
-You can then confirm that you have a `_2M` branch in your output ROOT file.
+> ## Details of GaudiExec {.callout}
+>
+> Here, `.options` is a list of arguments that are passed to `gaudirun.py`. The actual command
+> looks like:
+>
+> ```bash
+$ ./run gaudirun.py [options contents] [inputdata contents]
+```
+>
+> If you want to run a program directly without the `gaudirun.py` script, you can add `j.application.useGaudiRun = False`.
 
-> ## Running without gaudirun.py {.callout}
-> 
-> If you want to run a program directly, you can add `j.application.useGaudiRun = False`.
+After running this job, confirm that you have a `_2M` branch in your output ROOT file.
+
 
 
 > ## You know what to do {.challenge}
