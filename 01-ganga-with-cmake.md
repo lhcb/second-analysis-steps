@@ -100,6 +100,8 @@ $ ./run gaudirun.py [options contents] [inputdata contents]
 ```
 >
 > If you want to run a program directly without the `gaudirun.py` script, you can add `j.application.useGaudiRun = False`.
+>
+> For more info, do `help(GaudiExec)` in Ganga.
 
 After running this job, confirm that you have a `_2M` branch in your output ROOT file.
 
