@@ -76,7 +76,7 @@ using the built in version of our app (`DaVinci()`), we will use `GaudiExec()` t
 custom application:
 
 ```shell
-$ lb-run Ganga v602r0 ganga
+$ lb-run Ganga v602r2 ganga
 ```
 
 ```
