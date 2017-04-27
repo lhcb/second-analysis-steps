@@ -1,8 +1,8 @@
 ---
 layout: page
-title: First steps in LHCb
+title: Second steps in LHCb
 subtitle: HLT intro
-minutes: 45
+minutes: 75
 ---
 
 > ## Learning Objectives {.objectives}
@@ -43,16 +43,16 @@ available in HLT2 is the same as the offline reconstruction, physics analysis
 can be done with the candidates created in HLT2. If a line is configured to be a
 Turbo line, all information on the candidates that it selects is stored in the
 raw event. These candidates can be resurrected later by the Tesla application and
-written to a microDST. This is similar to stripping streams that go to 
-microDST, where only candidates that are used in passing selections are 
-available to analysts. The Turbo stream is different because information that 
+written to a microDST. This is similar to stripping streams that go to
+microDST, where only candidates that are used in passing selections are
+available to analysts. The Turbo stream is different because information that
 is not saved is lost forever.
 
 We will now have a look at some of the candidates stored by the HLT. We will use the script we
 [used last time](http://lhcb.github.io/first-analysis-steps/05-interactive-dst.html)
 as a starting point, and the file
 `root://eoslhcb.cern.ch//eos/lhcb/user/r/raaij/Impactkit/00051318_00000509_1.turbo.mdst`.
-This file contains some 2016 Turbo events from [run 
+This file contains some 2016 Turbo events from [run
 174252](http://lbrundb.cern.ch/rundb/run/174252/).  Fire up your
 favourite editor, open the script and save a copy to work on as
 `hlt_info.py`. There are a few things in the script that we don't need and can
@@ -75,7 +75,7 @@ decision. This can be done using the `decision` member function of a
 
 ~~~ {.python}
 reports = evt['Hlt1/DecReports']
-report = reports.decReport('Hlt1TrackAllL0Decision')
+report = reports.decReport('Hlt1TrackMVADecision')
 print report.decision()
 ~~~
 
@@ -83,7 +83,7 @@ The HLT1 selections that are most efficient for hadronic charm and beauty decays
 in Run 2 are called Hlt1TrackMVA and Hlt1TwoTrackMVA. Use the advance function
 to find an event that was accepted by either of these trigger selections.
 
-The DecReports only contains the decisions for each line, 1 or 0. The 
+The DecReports only contains the decisions for each line, 1 or 0. The
 candidates themselves are stored in the
 SelReports ("Hlt{1,2}/SelReports"). Get the HLT1 SelReports from the event store
 and retrieve the one for one of the TrackMVA selections using the selReport function,
