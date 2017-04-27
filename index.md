@@ -3,26 +3,26 @@ layout: lesson
 title: Second analysis steps in LHCb
 ---
 
-These are the lessons for the second-stage workshop of the [Starterkit 
+These are the lessons for the second-stage workshop of the [Starterkit
 series][starterkit].
-They build on those from [the first workshop][first-ana], teaching LHCb 
+They build on those from [the first workshop][first-ana], teaching LHCb
 software that's more advanced and more focused on specific tasks.
 
-Unlike the first workshop, there may be some lessons here that aren't 
-applicable to everyone's analysis, but all the lessons should still provide a 
+Unlike the first workshop, there may be some lessons here that aren't
+applicable to everyone's analysis, but all the lessons should still provide a
 useful insight in to how things work under the hood.
-It may also be that some lessons don't depend on any others; the prerequisites 
+It may also be that some lessons don't depend on any others; the prerequisites
 will be clearly stated at the beginning of each lesson.
 
-If you have any problems or questions, you can [open an 
-issue][second-ana-issues] on the [GitHub repository where these lessons are 
-developed][second-ana-repo], or you can [send an email to 
+If you have any problems or questions, you can [open an
+issue][second-ana-issues] on the [GitHub repository where these lessons are
+developed][second-ana-repo], or you can [send an email to
 `lhcb-starterkit@cern.ch`](mailto:lhcb-starterkit@cern.ch).
 
 > ## Prerequisites {.prereq}
 >
-> Before starting, you should be familiar with the [first analysis 
-> steps](https://lhcb.github.io/first-analysis-steps/) and satisfy all of its 
+> Before starting, you should be familiar with the [first analysis
+> steps](https://lhcb.github.io/first-analysis-steps/) and satisfy all of its
 > prerequisites.
 >
 
@@ -36,6 +36,8 @@ developed][second-ana-repo], or you can [send an email to
 1. [Reuse particles from a decay tree](18-filter-in-trees.html)
 1. [HLT intro](18-hlt-intro.html)
 1. [TisTos DIY](18-tistos-diy.html)
+1. [Turbo Stream](19-turbo.html)
+1. [Persisted Reconstruction](20-persist-reco.html)
 1. [Managing files in Ganga](01-managing-files-with-ganga.html)
 1. [Using Ganga with local projects](01-ganga-with-cmake.html)
 
