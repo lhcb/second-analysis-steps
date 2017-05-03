@@ -17,25 +17,29 @@ To understand what is produced in any simulated sample, you need to understand t
 
 The procedure for testing and committing decfiles is well documented:
 https://twiki.cern.ch/twiki/bin/view/LHCb/GaussDecayFiles
-The code below is taken from there, and is likely to remain more up to date.
-At present, Gauss has yet to move to the new software framework, and continues to use svn and cmt make. 
-To checkout and compile the DecFiles package.
+The TWiki page still uses the old `SetupProject` approach. Instead, we will adapt this to use the new `lb-run` and `lb-dev` approach. First we need to create a Gauss developement environment:
 ```shell
-SetupProject Gauss v49r7 --build-env
-cd ~/cmtuser/Gauss_v49r7
-SetupProject Gauss v49r7
-getpack Gen/DecFiles head
-cd ~/cmtuser/Gauss_v49r7/Gen/DecFiles/cmt
-cmt make
+lb-dev --name GaussDev_ImpactKit Gauss/v49r7
+cd GaussDev_ImpactKit
 ```
-This will populate the ~/cmtuser/Gauss_v49r7/Gen/DecFiles/Options directory with an python options file to generate events for each decfile, (eventtype).py
-Note that recompiling will not overwrite existing options file, it is necessary to remove by hand all of the python files in ~/cmtuser/Gauss_v49r7/Gen/DecFiles/Options.
+To modify or add a dec file, we need the DecFiles package which is still on svn:
+```shell
+getpack Gen/DecFiles head
+make
+```
+This will populate the `./Gen/DecFiles/Options` directory with an python options file to generate events for each decfile, `(eventtype).py`. The location where the dec files are located is stored in `$DECFILESROOT` and we can check that the correct on is used by running
+```shell
+./run $SHELL -c 'echo $DECFILESROOT'
+```
+which should point `Gen/DecFiles` directory in the current development environment.
+
+>Note that recompiling will not overwrite existing options file, it is necessary to remove by hand all of the python files in `./Gen/DecFiles/Options`.
 After this, to produce some generator level events:
 ```shell
-SetupProject Gauss v49r7
-cd ~/cmtuser/Gauss_v49r7
-gaudirun.py $GAUSSOPTS/Gauss-Job.py $GAUSSOPTS/Gauss-2016.py $GAUSSOPTS/GenStandAlone.py $DECFILESROOT/options/11164001.py $LBPYTHIA8ROOT/options/Pythia8.py
+./run gaudirun.py '$GAUSSOPTS/Gauss-Job.py' '$GAUSSOPTS/Gauss-2016.py' '$GAUSSOPTS/GenStandAlone.py' '$DECFILESROOT/options/11164001.py' '$LBPYTHIA8ROOT/options/Pythia8.py'
 ```
+where `$GAUSSOPTS/Gauss-Job.py'` configures Gauss to produce 5 events and `'$GAUSSOPTS/Gauss-2016.py'` sets up the nominal 2016 conditions and loads additional options files to do so.
+
 This will output a .xgen file containing simulated events, as well as a root file containing various monitoring histograms you will probably never want to look at.  
 To change the number of events generated make a local copy of Gauss-Job.py.
 Note that the number of events produced is *after generator level cuts* - this is also true for production requests.
