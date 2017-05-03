@@ -11,6 +11,20 @@ minutes: 60
 > * Produce generator level Monte Carlo, print the decay tree and produce nTuples
 > * Read a DecFile and understand what it produces, including generator level cuts
 # What is Gauss?
+
+The LHCb simulation framework which steers the creation of simulated events and interfaces to multiple external applications. Most commonly, an event is created via the following procedure:
+
+1. The `ProductionTool` (Pythia, GenXicc, ...) generates an event with the required signal particle. Either by generating minimum bias events until a matching particle is found or by ensuring one is produced in every event.
+2. The signal particle is decayed using the `DecayTool` (EvtGen) to the desired final state, all remaining unstable particles are decayed independently.
+3. The signal and its decay products might be required to pass generator level cuts implemented as a `CutTool`.
+4. Particles are transported through the detector simulation.
+
+> ## Things to remember {.callout}
+>
+> 1. The detector simulation takes **__by far__** the most time consuming step (it takes minutes). So make sure your generator cuts remove events you cannot possible reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!
+> 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true candidates are not required to pass.
+> 3. The number of generated events refers to the number entering step 4 above, so those passing the generator level cuts. __Not__ the number of events produced by the `ProductionTool` in the first step.
+
 # Figuring out which option files to use and running it
 
 Imagine you need to know the option files and software versions used for a simulated sample you have found in the bookkeeping, e.g.
@@ -78,13 +92,11 @@ which should point `Gen/DecFiles` directory in the current development environme
 >Note that recompiling will not overwrite existing options file, it is necessary to remove by hand all of the python files in `./Gen/DecFiles/Options`.
 After this, to produce some generator level events:
 ```shell
-./run gaudirun.py '$GAUSSOPTS/Gauss-Job.py' '$GAUSSOPTS/Gauss-2016.py' '$GAUSSOPTS/GenStandAlone.py' '$DECFILESROOT/options/11164001.py' '$LBPYTHIA8ROOT/options/Pythia8.py'
+./run gaudirun.py Gauss-Job.py '$GAUSSOPTS/GenStandAlone.py' '$DECFILESROOT/options/11164001.py' '$LBPYTHIA8ROOT/options/Pythia8.py'
 ```
-where `$GAUSSOPTS/Gauss-Job.py'` configures Gauss to produce 5 events and `'$GAUSSOPTS/Gauss-2016.py'` sets up the nominal 2016 conditions and loads additional options files to do so.
 
 This will output a .xgen file containing simulated events, as well as a root file containing various monitoring histograms you will probably never want to look at.  
-To change the number of events generated make a local copy of Gauss-Job.py.
-Note that the number of events produced is *after generator level cuts* - this is also true for production requests.
+As stated above, note that the number of events produced is *after generator level cuts* - this is also true for production requests.
 
 The .xgen file can be processed into something more usable with DaVinci:
 ```python
