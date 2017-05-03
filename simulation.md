@@ -17,6 +17,39 @@ Imagine you need to know the option files and software versions used for a simul
 ```
 /MC/2015/Beam2510GeV-2015-MagDown-Nu1.5-25ns-Pythia8/Sim09b/Trig0x4115014e/Reco15a/Turbo01aEM/Stripping22NoPrescalingFlagged/27163003/ALLSTREAMS.DST
 ```
+First, find the ProductionID:
+![FindingProductionID](img/simulation_1.png)
+Search for this ID in the Transformation Monitor, right click the result and select "Show request". Right clicking and selecting "View" in the new window will open an overview about all the individual steps of the production with their application version, the option files used.
+> Important: the order of the option files matters!
+The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file containing, for example:
+
+```python
+from Gauss.Configuration import GenInit
+
+GaussGen = GenInit("GaussGen")
+GaussGen.FirstEventNumber = 1
+GaussGen.RunNumber = 1082
+
+from Configurables import LHCbApp
+LHCbApp().DDDBtag = 'dddb-20150724'
+LHCbApp().CondDBtag = 'sim-20160623-vc-md100'
+LHCbApp().EvtMax = 5
+```
+
+Assuming this is saved in a file called `Gauss-Job.py` and following example above, the sample can then be produced by running
+
+```shell
+lb-run Gauss/v49r7 gaudirun.py '$APPCONFIGOPTS/Gauss/Beam2510GeV-md100-2015-nu1.5.py' \
+'$APPCONFIGOPTS/Gauss/DataType-2015.py' \
+'$APPCONFIGOPTS/Gauss/RICHRandomHits.py' \
+'$DECFILESROOT/options/27163003.py' \
+'$LBPYTHIA8ROOT/options/Pythia8.py' \
+'$APPCONFIGOPTS/Gauss/G4PL_FTFP_BERT_EmNoCuts.py' \
+'$APPCONFIGOPTS/Persistency/Compression-ZLIB-1.py' \
+Gauss-Job.py
+```
+
+This would take 5 to 10 minutes due to the detector simulation, which can be turned off by adding `'$GAUSSOPTS/GenStandAlone.py'` as one of the options files.
 
 # Setting up a new Decay
 
