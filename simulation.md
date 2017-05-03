@@ -173,7 +173,77 @@ B~0                 228676.20   5279.58 228615.24   4575.10   3122.65    -18.05
 ```
 , which is extremely helpful for knowing if your decfile is producing what you think it should. Note that in addition to your signal B0, it will also print out the decay chain for any B0 in the event, so you will regularly see other random B decays.
 
-####introduction to generator level cuts
+# DecFiles
+
+```
+# EventType: 11146031
+#
+# Descriptor: [B0 -> (J/psi(1S) -> mu+ mu-)  (K*0 -> K+ pi-) (phi -> K+ K-)]cc
+#
+# NickName: Bd_JpsiphiKst,KKmumuKpi=DecProdCut
+#
+# Cuts: DaughtersInLHCb
+#
+# CPUTime: < 1 min
+#
+# Documentation:  Bd decay to Jpsi(to mu+ mu-), phi(to K+ K-) Kst(K+ pi-) with K+,K-,mu,mu,K+,pi- in acceptance
+# EndDocumentation
+#
+# PhysicsWG: B2Ch 
+# Tested: Yes
+# Responsible: Alessia Satta
+# Email: alessia.satta@cern.ch
+# Date: 20160514
+#
+```
+The information in the header is not just bookkeeping, almost all of it is parsed and changes what you get out at the end. The EventType is a series of flags which controls the generation. The rules for this are described in detail at:
+https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf
+For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias...
+Similarly, the document specifies the conventions for the "NickName" - which also has to be the filename. Note that once MC has been produced from a given DecFile, it is not allowed to be changed, so you never need to worry about which version of DecFiles you are looking at when trying to understand existing samples.
+
+The "Cuts" field specifies one of a set of C++ selections in:
+https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/
+
+# Generator level cuts
+
+Detector simulation is computationally expensive, and event generation is comparatively fast. Cuts at generator level save a huge amount of CPU and disk space (which means you can have more actually useful events) almost for free. At generator level you can only cut on pre-resolution quantities, so normally you want the generator cuts to be 100% efficient for selected events (within epsilon). The default example is to immediately remove events where the daughters are far outside the LHCb acceptance.
+This is implemented in "DaugthersInLHCb", aka "DecProdCut" in the NickName. This requires that each "stable charged particle" is in a loose region around the LHCb acceptance (10-400 mrad in Theta). 
+
+# LoKi GenCutTool
+Another method to apply generator level cuts is via the LoKi::GenCutTool. This is used via the "InsertPythonCode" command in the header, which allows to write python code which is inserted into the options file:
+```
+# EventType: 11574020
+#
+# Descriptor: {[[B0]nos => nu_mu mu+ (D*(2010)- => (D~0 -> K+ pi-) pi-)]cc, [[B0]os => anti_nu_mu mu- (D*(2010)+ => (D0 -> K- pi+) pi+)]cc}
+#
+# NickName: Bd_Dst+munu=TightCuts
+# Cuts: 'LoKi::GenCutTool/TightCut'
+# InsertPythonCode:
+#from Configurables import LoKi__GenCutTool
+#from Gauss.Configuration import *
+#gen = Generation()
+#gen.SignalRepeatedHadronization.addTool ( LoKi__GenCutTool , 'TightCut' )
+#tightCut = gen.SignalRepeatedHadronization.TightCut
+#tightCut.Decay = "[ (Beauty) ==> ^(D~0 -> ^K+ ^pi- {gamma} {gamma} {gamma}) ^mu+ nu_mu {X} {X} {X} {X} {X} {X} {X} {X} ]CC"
+#tightCut.Preambulo += [
+#  "from LoKiCore.functions import in_range"  ,
+#  "from GaudiKernel.SystemOfUnits import GeV, MeV"  ,
+#  "piKP     = GCHILD(GP,('K+' == GABSID )) + GCHILD(GP,('pi-' == GABSID ))" ,
+#  "piKPT     = GCHILD(GPT,('K+' == GABSID )) + GCHILD(GPT,('pi-' == GABSID ))" ,
+#]
+#tightCut.Cuts      =    {
+# '[pi+]cc'   : " in_range( 0.010 , GTHETA , 0.400 )& ( GPT > 700 * MeV )" ,
+# '[K-]cc'   : " in_range( 0.010 , GTHETA , 0.400 ) & ( GPT > 700 * MeV )" ,
+# '[mu+]cc'  : " in_range( 0.010 , GTHETA , 0.400 ) & (GP > 2500* MeV) ",
+# '[D~0]cc'   : "( piKP > 15000 * MeV ) & (piKPT > 2300 * MeV)"
+#    }
+# EndInsertPythonCode
+# Documentation: B -> D*+ mu nu.  D* -> D0 pi, D0 -> K pi. Cuts for B -> D* tau nu, tau-> mu #analysis.
+```
+This requires the addition of "TightCut" to the nickname.
+
+# Generator cut efficiency
+
 The generator cut efficiency can be found from the GeneratorLog.xml file, which contains e.g:
 <efficiency name = "generator level cut">
     <after> 5 </after>
@@ -183,23 +253,149 @@ The generator cut efficiency can be found from the GeneratorLog.xml file, which 
 </efficiency>
 
 
+
+# Controlling decays
+
+To start with a simple example:
+
 ```
-actual decfile
+# EventType: 12163001
+#
+# Descriptor: [B+ -> (D~0 -> K+ pi-) pi+]cc
+#
+# NickName: Bu_D0pi,Kpi=DecProdCut
+#
+# Cuts: DaughtersInLHCb
+#
+# Documentation: 
+#   Control channel for B->DK ADS and GLW analyses
+# EndDocumentation
+#
+# PhysicsWG: B2OC
+# Tested: Yes
+# Responsible: Paolo Gandini
+# Email: p.gandini1@physics.ox.ac.uk
+# Date: 20051208
+#
+Alias      MyD0        D0
+Alias Myanti-D0   anti-D0
+ChargeConj        MyD0       Myanti-D0
+#
+Decay B+sig
+  1.000     Myanti-D0  pi+               PHSP;
+Enddecay
+CDecay B-sig
+#
+Decay Myanti-D0
+  1.000        K+        pi-                    PHSP;
+Enddecay
+CDecay MyD0
+#
+End
 ```
-The information in the header is not just bookkeeping, almost all of it is parsed and changes what you get out at the end. The EventType is a series of flags which controls the generation. The rules for this are described in detail at:
-https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf
-For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias...
-Similarly, the document specifies the conventions for the "NickName" - which also has to be the filename.
+This DecFile defines a Signa B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of "MyD0". If the decay was to "D0" rather than "MyD0", the D0 would decay via all of the decay modes implemented in DECAY.DEC.
+The final part of each decay is the actual physics model used - in this case "PHSP", which is phase space only (matrix element = constant). Note that with PHSP the daughters are completely unpolarized - for anything other than (spin 0) to (spin0 spin0) this will get the angular momentum wrong!
 
-The "Cuts" field specifies one of a set of C++ selections in:
-https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/
-The most common example is "DaugthersInAcceptance", aka "DecProdCut" in the NickName. This requires that each "stable charged particle" is in a loose region around the LHCb acceptance (10-400 mrad in Theta). 
+#Two body decays - getting angular momentum right
+EvtGen has specific models for each two body spin configuration, for example Scalar to Vector+Scalar (SVS), and Vector to lepton+lepton(VLL)
+```
+#
+Decay B+sig
+  1.000     MyJ/psi  K+                   SVS;
+Enddecay
+CDecay B-sig
+#
+Decay MyJ/psi
+  1.000     mu+  mu-                      PHOTOS  VLL;
+Enddecay
+```
+For decays to two vectors, there is a more complicated polarization structure which needs to be specified - for example here the fraction and phase for each helicity are set according to measured values:
+```
+Define Hp 0.159
+Define Hz 0.775
+Define Hm 0.612
+Define pHp 1.563
+Define pHz 0.0
+Define pHm 2.712
+#
+Alias      MyJ/psi    J/psi
+Alias      MyK*0      K*0
+Alias      Myanti-K*0 anti-K*0
+ChargeConj MyK*0      Myanti-K*0
+ChargeConj MyJ/psi    MyJ/psi
+#
+Decay B0sig
+  1.000         MyJ/psi   MyK*0          SVV_HELAMP Hp pHp Hz pHz Hm pHm;
+Enddecay
+Decay anti-B0sig
+  1.000         MyJ/psi   Myanti-K*0     SVV_HELAMP Hm pHm Hz pHz Hp pHp;
+Enddecay
+```
 
-###python style cuts
+#3+ bodies
+For 3+ bodies the physics models get more complicated. For a fully hadronic final state, typically a Dalitz model will be specified, e.g:
+```
+# D_DALITZ includes resonances contributions (K*(892), K*(1430), K*(1680))
+Decay MyD-
+  1.000    K+        pi-    pi-          D_DALITZ;
+Enddecay
+CDecay MyD+
+```
+Any time you see a 3+ body decay with the PHSP model, you know it will be very far from reality. If you have no other information sometimes this is the best you can do, though.
 
-###CPUtime
+A semileptonic decay would typically be produced according to some form factor model, e.g
+```
+Decay B0sig 
+# FORM FACTORS as per HFAG PDG10
+   1   MyD*-        mu+  nu_mu         PHOTOS  HQET 1.20 1.426 0.818 0.908;
+  #
+Enddecay
+CDecay anti-B0sig
+```
+here the numbers correspond to measured values for the form factor parameters. 
+# Cocktail decays
+Often you will want to simulate more than one decay mode in a sample, e.g:
+```
+Decay MyD_s+
+ 0.0259 phi      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0267 eta      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0099 eta'     mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0037 K0       mu+     nu_mu                      PHOTOS  ISGW2;  
+ 0.0018 K*0      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0020 f_0      mu+     nu_mu                      PHOTOS  ISGW2; 
+ 0.0059 mu+      nu_mu                              PHOTOS   SLN; 
+Enddecay
+CDecay MyD_s-
+```
+Note that the fractions will always be renormalised to sum to 1 - you can directly use PDG branching fractions without having to rescale by hand.
 
-###changing particle properties
+# Final state radiation
+Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
+
+
+# Changing particle masses / lifetimes/ widths
+Sometimes you need to change the mass or lifetime of a particle, either because the initial values are wrong, or the particle you actually want doesn't exist in EvtGen, and you need to adapt an existing particle.
+This can be done with python code inserted in the header:
+
+```
+# InsertPythonCode:
+#from Configurables import LHCb__ParticlePropertySvc
+#LHCb__ParticlePropertySvc().Particles = [ 
+# "N(1440)+              636       12212   1.0      1.4400000      2.194041e-24                 N(1440)+           21440      0.00",
+# "N(1440)~-             637      -12212  -1.0      1.4400000      2.194841e-24                   anti-N(1440)-           -21440      0.00",
+#"N(1520)+              420        2124   1.0      1.52000000      5.723584e-24                   N(1520)+           21520      0.00",
+# "N(1520)~-             421       -2124  -1.0      1.52000000     5.723584e-24                   anti-N(1520)-           -21520      0.00",
+#"N(1535)+              713       22212   1.0      1.53500000      4.388081e-24                   N(1535)+           21535      0.00",
+#"N(1535)~-             714      -22212  -1.0      1.53500000      4.388081e-24                   anti-N(1535)-           -21535      0.00",
+#"N(1720)+              775       32124   1.0      1.72000000      2.632849e-24                   N(1720)+           21720      0.00",
+#"N(1720)~-             776      -32124  -1.0      1.72000000      2.632849e-24                   anti-N(1720)-           -21720      0.00"
+#]
+# EndInsertPythonCode
+```
+The format is: 
+```
+#                    GEANTID    PDGID  CHARGE   MASS(GeV)      TLIFE(s)                    EVTGENNAME    PYTHIAID    MAXWIDTH
+```
 
 # Filtering a simulated sample
 
