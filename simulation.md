@@ -10,6 +10,15 @@ minutes: 60
 > * Understand how a signal decay sample is produced in the LHCb framework
 > * Produce generator level Monte Carlo, print the decay tree and produce nTuples
 > * Read a DecFile and understand what it produces, including generator level cuts
+# What is Gauss?
+# Figuring out which option files to use and running it
+
+Imagine you need to know the option files and software versions used for a simulated sample you have found in the bookkeeping, e.g.
+```
+/MC/2015/Beam2510GeV-2015-MagDown-Nu1.5-25ns-Pythia8/Sim09b/Trig0x4115014e/Reco15a/Turbo01aEM/Stripping22NoPrescalingFlagged/27163003/ALLSTREAMS.DST
+```
+
+# Setting up a new Decay
 
 EvtGen is completely controlled via a specific file for each sample, known as a DecFile. These live in the DecFiles package:
 https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles
