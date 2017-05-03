@@ -10,6 +10,8 @@ minutes: 60
 > * Understand how a signal decay sample is produced in the LHCb framework
 > * Produce generator level Monte Carlo, print the decay tree and produce nTuples
 > * Read a DecFile and understand what it produces, including generator level cuts
+> * Filter a simulated sample to reduce disk space needed
+
 # What is Gauss?
 
 The LHCb simulation framework which steers the creation of simulated events and interfaces to multiple external applications. Most commonly, an event is created via the following procedure:
@@ -21,11 +23,11 @@ The LHCb simulation framework which steers the creation of simulated events and 
 
 > ## Things to remember {.callout}
 >
-> 1. The detector simulation takes **__by far__** the most time consuming step (it takes minutes). So make sure your generator cuts remove events you cannot possible reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!
-> 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true candidates are not required to pass.
+> 1. The detector simulation is the **__by far__** most time consuming step (minutes). So make sure your generator cuts remove events you cannot possible reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!
+> 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true candidate is not required to pass.
 > 3. The number of generated events refers to the number entering step 4 above, so those passing the generator level cuts. __Not__ the number of events produced by the `ProductionTool` in the first step.
 
-# Figuring out which option files to use and running it
+# Figuring out which option files to use and how to run Gauss
 
 Imagine you need to know the option files and software versions used for a simulated sample you have found in the bookkeeping, e.g.
 ```
@@ -33,9 +35,9 @@ Imagine you need to know the option files and software versions used for a simul
 ```
 First, find the ProductionID:
 ![FindingProductionID](img/simulation_1.png)
-Search for this ID in the Transformation Monitor, right click the result and select "Show request". Right clicking and selecting "View" in the new window will open an overview about all the individual steps of the production with their application version, the option files used.
-> Important: the order of the option files matters!
-The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file containing, for example:
+Search for this ID in the Transformation Monitor, right click the result and select "Show request". Right clicking and selecting "View" in the new window will open an overview about all the individual steps of the production with their application version and option files used.
+> Important: the order of the option files does matter!
+The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file, containing, for example:
 
 ```python
 from Gauss.Configuration import GenInit
@@ -50,7 +52,7 @@ LHCbApp().CondDBtag = 'sim-20160623-vc-md100'
 LHCbApp().EvtMax = 5
 ```
 
-Assuming this is saved in a file called `Gauss-Job.py` and following example above, the sample can then be produced by running
+Assuming this is saved in a file called `Gauss-Job.py` and following the example above, the sample can then be produced by running
 
 ```shell
 lb-run Gauss/v49r7 gaudirun.py '$APPCONFIGOPTS/Gauss/Beam2510GeV-md100-2015-nu1.5.py' \
@@ -63,7 +65,7 @@ lb-run Gauss/v49r7 gaudirun.py '$APPCONFIGOPTS/Gauss/Beam2510GeV-md100-2015-nu1.
 Gauss-Job.py
 ```
 
-This would take 5 to 10 minutes due to the detector simulation, which can be turned off by adding `'$GAUSSOPTS/GenStandAlone.py'` as one of the options files.
+This would take 5 to 10 minutes due to the detector simulation, which can be turned off by adding `'$GAUSSOPTS/GenStandAlone.py'` as one of the option files.
 
 # Setting up a new Decay
 
@@ -199,11 +201,58 @@ The most common example is "DaugthersInAcceptance", aka "DecProdCut" in the Nick
 
 ###changing particle properties
 
+# Filtering a simulated sample
 
-> ## Work to do {.challenge}
->  - Finish the script (the base of which can be found [here](code/06-building-decays/build_decays.py)) by adapting the basic `DaVinci` configuration from its corresponding [lesson](http://lhcb.github.io/first-analysis-steps/08-minimal-dv-job.html) and check the output ntuple.
->  - Replace the `"Combine_D0"` and `"Sel_D0"` objects by a single `SimpleSelection`.
->  - Do you know what the used LoKi functors (`AMAXDOCA`, `ADAMASS`, `MIPCHI2DV`, etc) do? 
->  - Add a `PrintSelection` in your selections and run again.
->  - Create a `graph` of the selection.
+For larger production requests, the amount of disk space required to store the sample becomes a problem. Therefore, a filtering of the final candidates obtained after the stripping step in the MC production can be applied. As this does not reduce the CPU requirements, filtering steps are best accompanied by a matching (but looser) set of generator cuts.
 
+Assuming we have a sample of simulated D*+ -> D0( -> K pi ) pi which we would like to filter on the Turbo line `'Hlt2CharmHadD02KPi_XSecTurbo'`:
+
+```python
+from GaudiConf import IOHelper
+IOHelper().inputFiles(
+   ['root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/MC/2015/ALLSTREAMS.DST/00057933/0000/00057933_00000232_3.AllStreams.dst'],
+    clear=True)
+```
+
+We also do not need any events where the D0 candidate has a transverse momentum less than 3 GeV. We already know how to write the filter for this:
+```python
+from PhysSelPython.Wrappers import AutomaticData, SelectionSequence, Selection
+from Configurables import FilterDesktop
+
+line = 'Hlt2CharmHadD02KPi_XSecTurbo'
+Dzeros = AutomaticData('/Event/Turbo/'+line+'/Particles')
+
+decay = '[D0 --> K- pi+]CC'
+
+pt_selection = FilterDesktop(
+    'D0_PT_selector', Code="(CHILD(PT, '{0}') > 3000*MeV)".format(decay))
+
+sel = Selection('D0_PT_selection',
+                Algorithm=pt_selection,
+                RequiredSelections=[Dzeros])
+
+selseq = SelectionSequence('D0_Filtered', sel)
+```
+Instead of writing a ntuple, we need to write out the events to an (m)DST which pass `selseq`. The necessary configuration is basically identical in all filtering options in use and for the DST format reads
+```python
+from DSTWriters.Configuration import (SelDSTWriter, stripDSTStreamConf, stripDSTElements)
+
+SelDSTWriterElements = {'default': stripDSTElements()}
+SelDSTWriterConf = {'default': stripDSTStreamConf()}
+
+dstWriter = SelDSTWriter("TurboFiltered",
+                         StreamConf=SelDSTWriterConf,
+                         MicroDSTElements=SelDSTWriterElements,
+                         OutputFileSuffix ='',
+                         SelectionSequences=[selseq]  # Only events passing selseq are written out!
+                         
+from Configurables import DaVinci
+DaVinci().appendToMainSequence([dstWriter.sequence()])
+```
+Running these options (after adding the usual `DaVinci()` options like data type, tags etc) produces the file `SelD0_Filtered.dst` and you can verify that every event has a candidate passing `'Hlt2CharmHadD02KPi_XSecTurbo'` with at least 3 GeV transverse momentum.
+
+> ## Filtering in production {.callout}
+>
+> 1. Option files need to be tested and checked by the MC liaisons.
+> 2. Exist here: http://svnweb.cern.ch/world/wsvn/lhcb/DBASE/tags/WG Lots and lots of examples.
+> 3. More details and naming conventions: https://twiki.cern.ch/twiki/bin/view/LHCbPhysics/FilteredSimulationProduction
