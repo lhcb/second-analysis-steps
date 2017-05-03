@@ -12,7 +12,7 @@ minutes: 60
 > * Read a DecFile and understand what it produces, including generator level cuts
 > * Filter a simulated sample to reduce disk space needed
 
-# What is Gauss?
+## What is Gauss?
 
 The LHCb simulation framework which steers the creation of simulated events and interfaces to multiple external applications. Most commonly, an event is created via the following procedure:
 
@@ -27,7 +27,7 @@ The LHCb simulation framework which steers the creation of simulated events and 
 > 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true candidate is not required to pass.
 > 3. The number of generated events refers to the number entering step 4 above, so those passing the generator level cuts. __Not__ the number of events produced by the `ProductionTool` in the first step.
 
-# Figuring out which option files to use and how to run Gauss
+## Figuring out which option files to use and how to run Gauss
 
 Imagine you need to know the option files and software versions used for a simulated sample you have found in the bookkeeping, e.g.
 ```
@@ -67,7 +67,7 @@ Gauss-Job.py
 
 This would take 5 to 10 minutes due to the detector simulation, which can be turned off by adding `'$GAUSSOPTS/GenStandAlone.py'` as one of the option files.
 
-# Setting up a new Decay
+## Setting up a new Decay
 
 EvtGen is completely controlled via a specific file for each sample, known as a DecFile. These live in the DecFiles package:
 https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles
@@ -173,7 +173,7 @@ B~0                 228676.20   5279.58 228615.24   4575.10   3122.65    -18.05
 ```
 , which is extremely helpful for knowing if your decfile is producing what you think it should. Note that in addition to your signal B0, it will also print out the decay chain for any B0 in the event, so you will regularly see other random B decays.
 
-# DecFiles
+## DecFiles
 
 ```
 # EventType: 11146031
@@ -204,12 +204,12 @@ Similarly, the document specifies the conventions for the "NickName" - which als
 The "Cuts" field specifies one of a set of C++ selections in:
 https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/
 
-# Generator level cuts
+## Generator level cuts
 
 Detector simulation is computationally expensive, and event generation is comparatively fast. Cuts at generator level save a huge amount of CPU and disk space (which means you can have more actually useful events) almost for free. At generator level you can only cut on pre-resolution quantities, so normally you want the generator cuts to be 100% efficient for selected events (within epsilon). The default example is to immediately remove events where the daughters are far outside the LHCb acceptance.
 This is implemented in "DaugthersInLHCb", aka "DecProdCut" in the NickName. This requires that each "stable charged particle" is in a loose region around the LHCb acceptance (10-400 mrad in Theta). 
 
-# LoKi GenCutTool
+## LoKi GenCutTool
 Another method to apply generator level cuts is via the LoKi::GenCutTool. This is used via the "InsertPythonCode" command in the header, which allows to write python code which is inserted into the options file:
 ```
 # EventType: 11574020
@@ -242,7 +242,7 @@ Another method to apply generator level cuts is via the LoKi::GenCutTool. This i
 ```
 This requires the addition of "TightCut" to the nickname.
 
-# Generator cut efficiency
+## Generator cut efficiency
 
 The generator cut efficiency can be found from the GeneratorLog.xml file, which contains e.g:
 <efficiency name = "generator level cut">
@@ -254,7 +254,7 @@ The generator cut efficiency can be found from the GeneratorLog.xml file, which 
 
 
 
-# Controlling decays
+## Controlling decays
 
 To start with a simple example:
 
@@ -353,7 +353,7 @@ Enddecay
 CDecay anti-B0sig
 ```
 here the numbers correspond to measured values for the form factor parameters. 
-# Cocktail decays
+## Cocktail decays
 Often you will want to simulate more than one decay mode in a sample, e.g:
 ```
 Decay MyD_s+
@@ -369,11 +369,11 @@ CDecay MyD_s-
 ```
 Note that the fractions will always be renormalised to sum to 1 - you can directly use PDG branching fractions without having to rescale by hand.
 
-# Final state radiation
+## Final state radiation
 Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
 
 
-# Changing particle masses / lifetimes/ widths
+## Changing particle masses / lifetimes/ widths
 Sometimes you need to change the mass or lifetime of a particle, either because the initial values are wrong, or the particle you actually want doesn't exist in EvtGen, and you need to adapt an existing particle.
 This can be done with python code inserted in the header:
 
@@ -397,7 +397,7 @@ The format is:
 #                    GEANTID    PDGID  CHARGE   MASS(GeV)      TLIFE(s)                    EVTGENNAME    PYTHIAID    MAXWIDTH
 ```
 
-# Filtering a simulated sample
+## Filtering a simulated sample
 
 For larger production requests, the amount of disk space required to store the sample becomes a problem. Therefore, a filtering of the final candidates obtained after the stripping step in the MC production can be applied. As this does not reduce the CPU requirements, filtering steps are best accompanied by a matching (but looser) set of generator cuts.
 
