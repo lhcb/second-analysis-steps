@@ -38,6 +38,7 @@ developed][second-ana-repo], or you can [send an email to
 1. [Reuse particles from a decay tree](filter-in-trees.html)
 1. [HLT intro](hlt-intro.html)
 1. [TisTos DIY](tistos-diy.html)
+1. [Ganga Scripting](ganga-scripting.html)
 1. [Managing files in Ganga](managing-files-with-ganga.html)
 
 ## Other Resources
