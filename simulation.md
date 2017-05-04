@@ -72,12 +72,10 @@ This would take 5 to 10 minutes due to the detector simulation, which can be tur
 
 ## Setting up a new Decay
 
-EvtGen is completely controlled via a specific file for each sample, known as a DecFile. Non-signal decays are produced according to DECAY.DEC, which contains all known (measured + some predicted) hadron decays. These live in the DecFiles package:
-https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles
+EvtGen is completely controlled via a specific file for each sample, known as a DecFile. Non-signal decays are produced according to DECAY.DEC, which contains all known (measured + some predicted) hadron decays. These live in the [DecFiles package](https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles)
 To understand what is produced in any simulated sample, you need to understand these. First, how to try them out.
 
-The procedure for testing and committing decfiles is well documented:
-https://twiki.cern.ch/twiki/bin/view/LHCb/GaussDecayFiles
+The procedure for testing and committing decfiles is well documented on [TWiki](https://twiki.cern.ch/twiki/bin/view/LHCb/GaussDecayFiles)
 The TWiki page still uses the old `SetupProject` approach. Instead, we will adapt this to use the new `lb-run` and `lb-dev` approach. First we need to create a Gauss developement environment:
 ```shell
 lb-dev --name GaussDev_ImpactKit Gauss/v49r7
@@ -95,6 +93,7 @@ This will populate the `./Gen/DecFiles/Options` directory with an python options
 which should point `Gen/DecFiles` directory in the current development environment.
 
 >Note that recompiling will not overwrite existing options file, it is necessary to remove by hand all of the python files in `./Gen/DecFiles/Options`.
+
 After this, to produce some generator level events:
 ```shell
 ./run gaudirun.py Gauss-Job.py '$GAUSSOPTS/GenStandAlone.py' '$DECFILESROOT/options/11164001.py' '$LBPYTHIA8ROOT/options/Pythia8.py'
@@ -161,7 +160,7 @@ DaVinci().UserAlgorithms = [printMC, mctuple]
 ```shell
 lb-run DaVinci/v41r0 gaudirun.py DaVinciOptions.py
 ```
-This script will attempt to build an nTuple from the xgen file it is given, using the specified decay descriptor. If everything is working correctly, this should return one entry per event, corresponding to your signal candidate. The PrintMCTree algorithm will print to screen the full decay chain for each particle in "decay_heads" e.g:
+This script will attempt to build an nTuple from the xgen file it is given, using the specified decay descriptor. If everything is working correctly, this should return at least one entry per event, corresponding to your signal candidate. The PrintMCTree algorithm will print to screen the full decay chain for each particle in "decay_heads" e.g:
 ```
 <--------------------------------- MCParticle --------------------------------->
                 Name         E         M         P        Pt       phi        Vz
@@ -199,8 +198,7 @@ B~0                 228676.20   5279.58 228615.24   4575.10   3122.65    -18.05
 # Date: 20160514
 #
 ```
-The information in the header is not just bookkeeping, almost all of it is parsed and changes what you get out at the end. The EventType is a series of flags which controls the generation. The rules for this are described in detail at:
-https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf
+The information in the header is not just bookkeeping, almost all of it is parsed and changes what you get out at the end. The EventType is a series of flags which controls the generation. The rules for this are described in detail in [LHCb-2005-034](https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf)
 For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias...
 Similarly, the document specifies the conventions for the "NickName" - which also has to be the filename. Note that once MC has been produced from a given DecFile, it is not allowed to be changed, so you never need to worry about which version of DecFiles you are looking at when trying to understand existing samples.
 
@@ -452,5 +450,5 @@ Running these options (after adding the usual `DaVinci()` options like data type
 > ## Filtering in production {.callout}
 >
 > 1. Option files need to be tested and checked by the MC liaisons.
-> 2. Exist here: http://svnweb.cern.ch/world/wsvn/lhcb/DBASE/tags/WG Lots and lots of examples.
-> 3. More details and naming conventions: https://twiki.cern.ch/twiki/bin/view/LHCbPhysics/FilteredSimulationProduction
+> 2. Exist in the [WG](http://svnweb.cern.ch/world/wsvn/lhcb/DBASE/tags/WG) project: Lots and lots of examples.
+> 3. More details and naming conventions on [TWiki](https://twiki.cern.ch/twiki/bin/view/LHCbPhysics/FilteredSimulationProduction)
