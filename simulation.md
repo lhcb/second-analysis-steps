@@ -421,7 +421,7 @@ line = 'Hlt2CharmHadD02KPi_XSecTurbo'
 Dzeros = AutomaticData('/Event/Turbo/'+line+'/Particles')
 
 pt_selection = FilterDesktop(
-    'D0_PT_selector', Code='PT')
+    'D0_PT_selector', Code='PT > 3000*MeV')
 
 sel = Selection('D0_PT_selection',
                 Algorithm=pt_selection,
