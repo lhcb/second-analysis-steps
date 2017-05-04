@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second analysis steps</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second analysis steps</h1>
+          <h2 class="subtitle">Building your own decay. Modern Selection Framework</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Build a decay chain with the most optimized tools</li>
+<li>Learn the advantages of these specialized tools</li>
+</ul>
+</div>
+</div>
+<p>As discussed previously, the Selection Framework can become a bit cumbersome in terms of the naming and construction of the <code>Selection</code>-<code>CombineParticles</code> repetitions. For this reason, the Selection Framework offers a more streamlined set of <code>Selection</code>s to deal with these issues.</p>
+<p>This two-step process for building the <code>Selection</code> (creating an algorithm and building a selection with it) can be simplified by using a helper function in the <code>PhysConf.Selections</code> module, called <code>SimpleSelection</code>. It gets a selection name, the algorithm type we want to run, the inputs and any other parameters that need to be passed to the algorithm (as keyword arguments), and returns a <code>Selection</code> object build in the same two-step way. With that in mind, we can rewrite the previous two pieces of code as</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">import</span> GaudiConfUtils.ConfigurableGenerators <span class="im">as</span> ConfigurableGenerators
+<span class="im">from</span> PhysConf.Selections <span class="im">import</span> SimpleSelection
+d0_sel <span class="op">=</span> SimpleSelection(
+    <span class="st">&#39;Sel_D0&#39;</span>,
+    ConfigurableGenerators.CombineParticles,
+    [Pions, Kaons],
+    DecayDescriptor<span class="op">=</span><span class="st">&#39;([D0 -&gt; pi- K+]CC)&#39;</span>,
+    DaughtersCuts<span class="op">=</span>d0_daughters,
+    CombinationCut<span class="op">=</span>d0_comb,
+    MotherCut<span class="op">=</span>d0_mother
+)</code></pre></div>
+<p>Note how we needed to use the <code>CombineParticles</code> from <code>GaudiConfUtils.ConfigurableGenerators</code> instead of the <code>PhysConf.Selections</code> one to make this work. This is because the LHCb algorithms are configured as singletons and it is mandatory to give them a name, which we don't want to in <code>SimpleSelection</code> (we want to skip steps!).</p>
+<div id="why-configurablegenerators" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="why-configurablegenerators" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Why <code>ConfigurableGenerators</code>?</h2>
+</div>
+<div class="panel-body">
+<p>If we had tried to simply use <code>CombineParticles</code> inside our <code>SimpleSelection</code>, we would have seen it fail with the following error</p>
+<pre class="output"><code>NameError: Could not instantiate Selection because input Configurable CombineParticles has default name. This is too unsafe to be allowed.</code></pre>
+<p>The reason for this is that all LHCb algorithms need an explicit and unique name. The solution for our problem, in which we actually don't care about the <code>CombineParticles</code> name, is the <code>GaudiConfUtils.ConfigurableGenerators</code> package: it contains wrappers around algorithms such as <code>CombineParticles</code> or <code>FilterDesktop</code> allowing them to be instantiated without an explicit name argument.</p>
+</div>
+</div>
+<p>In this case, we could also wonder about the need for the <code>CombineParticles</code> generator. While <code>SimpleSelection</code> will allow us to do anything we would do with <code>Selection</code>, there exist a few specialized versions of it that allow us to address its most common usages:</p>
+<ul>
+<li><p><code>CombineSelection</code> is used for the <code>Selection</code> – <code>CombineParticles</code> combination. The previous example would be written then:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> PhysConf.Selections <span class="im">import</span> CombineSelection
+d0_sel <span class="op">=</span> CombineSelection(
+    <span class="st">&#39;Sel_D0&#39;</span>,
+    [Pions, Kaons],
+    DecayDescriptor<span class="op">=</span><span class="st">&#39;([D0 -&gt; pi- K+]CC)&#39;</span>,
+    DaughtersCuts<span class="op">=</span>d0_daughters,
+    CombinationCut<span class="op">=</span>d0_comb,
+    MotherCut<span class="op">=</span>d0_mother
+)</code></pre></div></li>
+<li><p><code>Combine3BodySelection</code> and <code>Combine4BodySelection</code> are the selection version of the <code>DaVinci::N{3,4}BodyDecays</code> DaVinci algorithms (you can see an example of their use as generators <a href="https://gitlab.cern.ch/lhcb/Stripping/blob/master/Phys/StrippingArchive/python/StrippingArchive/Stripping28/StrippingRD/StrippingBeauty2XGamma.py#L869">here</a>), that allow to perform 3- and 4-body combinations with an improved CPU efficiency thanks to the existence of a set of cuts on the intermediate particle combinations (<code>Combination12Cut</code>, <code>Combination123Cut</code>). These are very useful in timing-critical environments, such as the Stripping.</p></li>
+<li><p><code>TupleSelection</code> allows to build a <code>Selection</code> with <code>DecayTreeTuple</code> as an algorithm.</p></li>
+<li><p><code>FilterSelection</code> is used to produce a <code>Selection</code> – <code>FilterDesktop</code> combination. It's used in a similar way as <code>CombineSelection</code>.</p></li>
+</ul>
+<div id="work-to-do" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="work-to-do" class="challenge panel panel-success"><span class="glyphicon glyphicon-pencil"></span>Work to do</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Rewrite the previous script to select our signal in terms of <code>SimpleSelections</code> and the other algorithms we just learned.</li>
+<li>Introduce <code>FilterSelection</code> by performing the soft pion selection outside the <code>CombineParticles</code> as discussed in the <em>Building shared selections</em> callout in the <a href="building-decays-part1.html">previous lesson</a>. The solution can be found <a href="code/building-decays/02.optimized.py">here</a>.</li>
+</ul>
+</div>
+</div>
+<p>To finalize, it is also very useful to know about the existence of certain selection algorithms specialized in filtering according to very commonly used criteria. These can be used as inputs for <code>SimpleSelection</code> to make sure the latter only run on those events that pass the filter. The most interesting are (see the <a href="https://gitlab.cern.ch/lhcb/Phys/blob/master/PhysSel/PhysSelPython/python/PhysSelPython/Wrappers.py">code</a> for the full list, along with examples on how to use them):</p>
+<ul>
+<li><p><code>TriggerSelection</code>, including <code>L0</code>/<code>Hlt1</code>/<code>Hlt2</code> specific versions. These are used to filter on certain trigger decisions (NB: their job is simply to filter, so they cannot be used as particle input for another selection). The same interface can be used for filtering on Stripping decisions by using the <code>StrippingSelection</code> class. With it, the example from the Starterkit <a href="https://lhcb.github.io/first-analysis-steps/minimal-dv-job.html">minimal DaVinci job</a>, in which the output of a Stripping line was passed to <code>DecayTreeTuple</code>, could be written in a more CPU-efficient way:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">line <span class="op">=</span> <span class="st">&#39;D2hhCompleteEventPromptDst2D2RSLine&#39;</span>
+strip_sel <span class="op">=</span> StrippingSelection(<span class="st">&quot;Strip_sel&quot;</span>,
+                               <span class="st">&quot;HLT_PASS(&#39;StrippingD2hhCompleteEventPromptDst2D2RSDecision&#39;)&quot;</span>)
+strip_input <span class="op">=</span> AutomaticData(<span class="st">&#39;Phys/</span><span class="sc">{0}</span><span class="st">/Particles&#39;</span>.<span class="bu">format</span>(line))
+tuple_sel <span class="op">=</span> TupleSelection(<span class="st">&#39;Tuple_sel&#39;</span>,
+                           [strip_sel, strip_input],
+                           Decay<span class="op">=</span><span class="st">&#39;[D*(2010)+ -&gt; (D0 -&gt; K- pi+) pi+]CC&#39;</span>)</code></pre></div></li>
+</ul>
+<p>This avoids running <code>DecayTreeTuple</code> on empty events, since the <code>strip_sel</code> stops processing before. This will only be helpful for rare Stripping lines, since the overhead of running <code>DecayTreeTuple</code> on empty events is small, but this has been proven useful in more complex workflows. Additionally, it takes care of <code>RootInTes</code> for you.</p>
+<div id="a-small-test" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="a-small-test" class="challenge panel panel-success"><span class="glyphicon glyphicon-pencil"></span>A small test</h2>
+</div>
+<div class="panel-body">
+<p>Try running the <a href="https://lhcb.github.io/first-analysis-steps/minimal-dv-job.html">minimal DaVinci job</a> with and without the <code>StrippingSelection</code>/<code>DecayTreeTuple</code> selections, and compare their performance</p>
+<p>In this particular case, there is a simple way to achieve a CPU-efficient code with <code>DecayTreeTuple</code>, thanks to the use of <code>DaVinci</code> pre-event filters;</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> PhysConf.Filters <span class="im">import</span> LoKi_Filters
+filter_ <span class="op">=</span> LoKi_Filters(STRIP_Code<span class="op">=</span><span class="st">&quot;HLT_PASS(&#39;StrippingD2hhCompleteEventPromptDst2D2RSDecision&#39;)&quot;</span>)
+
+DaVinci().EventPreFilters <span class="op">=</span> filter_.filters(<span class="st">&quot;FILTERS&quot;</span>)</code></pre></div>
+</div>
+</div>
+<ul>
+<li><p>Related to the previous ones, <code>TisTosSelection</code> are used to filter according to TIS/TOS. A whole range of them is available: <code>L0TOSSelection</code>, <code>L0TISSelection</code>, <code>Hlt1TOSSelection</code>, <code>Hlt1TISSelection</code>, <code>Hlt2TOSSelection</code> and <code>Hlt2TISSelection</code>.</p></li>
+<li><p><code>ValidBPVSelection</code>, which is used to check that a valid associated primary vertex is present.</p></li>
+</ul>
+<p>While it's hard to find simple examples in which the utility of these tools is clearly highlighted, it's important to note that they constitute a modular framework that allows to build very complex workflows from very simple pieces. In these situations, the Selection Framework is the ideal tool to keep the code bug-free and CPU-efficient.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>

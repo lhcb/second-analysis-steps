@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second analysis steps</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second analysis steps</h1>
+          <h2 class="subtitle">Generating signal decays</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Understand how a signal decay sample is produced in the LHCb framework</li>
+<li>Produce generator level Monte Carlo, print the decay tree and produce nTuples</li>
+<li>Read a DecFile and understand what it produces, including generator level cuts</li>
+<li>Filter a simulated sample to reduce disk space needed</li>
+</ul>
+</div>
+</div>
+<h2 id="what-is-gauss">What is Gauss?</h2>
+<p>The LHCb simulation framework which steers the creation of simulated events and interfaces to multiple external applications. Most commonly, an event is created via the following procedure:</p>
+<ol style="list-style-type: decimal">
+<li>The <code>ProductionTool</code> (Pythia, GenXicc, ...) generates an event with the required signal particle. Either by generating minimum bias events until a matching particle is found or by ensuring one is produced in every event. The resulting event is comprised of either stable particles or unstable particles which are known to either EvtGen or Geant4 and can be decayed.</li>
+<li>The signal particle is decayed using the <code>DecayTool</code> (EvtGen) to the desired final state, all remaining unstable particles are decayed independently.</li>
+<li>The signal and its decay products might be required to pass generator level cuts implemented as a <code>CutTool</code>.</li>
+<li>Particles are transported through the detector simulation.</li>
+</ol>
+<div id="things-to-remember" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="things-to-remember" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Things to remember</h2>
+</div>
+<div class="panel-body">
+<ol style="list-style-type: decimal">
+<li>The detector simulation is <strong><strong>by far</strong></strong> the most time consuming step (minutes, compared to seconds for the rest). So make sure your generator cuts remove events you cannot possibly reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!</li>
+<li>The generator cuts are only applied to the signal that was forced to decay to the specific final state. <em>Any</em> other true signal candidate is not required to pass.</li>
+<li>The number of generated events refers to the number entering step 4 above, so those passing the generator level cuts. <strong>Not</strong> the number of events produced by the <code>ProductionTool</code> in the first step.</li>
+</ol>
+</div>
+</div>
+<h2 id="figuring-out-which-option-files-to-use-and-how-to-run-gauss">Figuring out which option files to use and how to run Gauss</h2>
+<p>Imagine you need to know the option files and software versions used for a simulated sample you have found in the bookkeeping, e.g.</p>
+<pre><code>/MC/2015/Beam2510GeV-2015-MagDown-Nu1.5-25ns-Pythia8/Sim09b/Trig0x4115014e/Reco15a/Turbo01aEM/Stripping22NoPrescalingFlagged/27163003/ALLSTREAMS.DST</code></pre>
+<p>First, find the ProductionID: <img src="img/simulation_1.png" alt="FindingProductionID" /> Search for this ID in the Transformation Monitor, right click the result and select &quot;Show request&quot;. Right clicking and selecting &quot;View&quot; in the new window will open an overview about all the individual steps of the production with their application version and option files used.</p>
+<div id="important-the-order-of-the-option-files-does-matter" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="important-the-order-of-the-option-files-does-matter" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Important: the order of the option files does matter!</h2>
+</div>
+<div class="panel-body">
+<p><code>'$DECFILESROOT/options/27163003.py' '$LBPYTHIA8ROOT/options/Pythia8.py'</code> produces the sample using Pythia 8 while <code>'$LBPYTHIA8ROOT/options/Pythia8.py' '$DECFILESROOT/options/27163003.py'</code> uses Pythia 6.</p>
+</div>
+</div>
+<p>The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file, containing, for example:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> Gauss.Configuration <span class="im">import</span> GenInit
+
+GaussGen <span class="op">=</span> GenInit(<span class="st">&quot;GaussGen&quot;</span>)
+GaussGen.FirstEventNumber <span class="op">=</span> <span class="dv">1</span>
+GaussGen.RunNumber <span class="op">=</span> <span class="dv">1082</span>
+
+<span class="im">from</span> Configurables <span class="im">import</span> LHCbApp
+LHCbApp().DDDBtag <span class="op">=</span> <span class="st">&#39;dddb-20150724&#39;</span>
+LHCbApp().CondDBtag <span class="op">=</span> <span class="st">&#39;sim-20160623-vc-md100&#39;</span>
+LHCbApp().EvtMax <span class="op">=</span> <span class="dv">5</span></code></pre></div>
+<p>Assuming this is saved in a file called <code>Gauss-Job.py</code> and following the example above, the sample can then be produced by running</p>
+<pre class="shell"><code>lb-run Gauss/v49r7 gaudirun.py &#39;$APPCONFIGOPTS/Gauss/Beam2510GeV-md100-2015-nu1.5.py&#39; \
+&#39;$APPCONFIGOPTS/Gauss/DataType-2015.py&#39; \
+&#39;$APPCONFIGOPTS/Gauss/RICHRandomHits.py&#39; \
+&#39;$DECFILESROOT/options/27163003.py&#39; \
+&#39;$LBPYTHIA8ROOT/options/Pythia8.py&#39; \
+&#39;$APPCONFIGOPTS/Gauss/G4PL_FTFP_BERT_EmNoCuts.py&#39; \
+&#39;$APPCONFIGOPTS/Persistency/Compression-ZLIB-1.py&#39; \
+Gauss-Job.py</code></pre>
+<p>This would take 5 to 10 minutes due to the detector simulation, which can be turned off by adding <code>'$GAUSSOPTS/GenStandAlone.py'</code> as one of the option files.</p>
+<h2 id="setting-up-a-new-decay">Setting up a new Decay</h2>
+<p>EvtGen is completely controlled via a specific file for each sample, known as a DecFile. Non-signal decays are produced according to DECAY.DEC, which contains all known (measured + some predicted) hadron decays. These live in the <a href="https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles">DecFiles package</a> To understand what is produced in any simulated sample, you need to understand these. First, how to try them out.</p>
+<p>The procedure for testing and committing decfiles is well documented on <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/GaussDecayFiles">TWiki</a> The TWiki page still uses the old <code>SetupProject</code> approach. Instead, we will adapt this to use the new <code>lb-run</code> and <code>lb-dev</code> approach. First we need to create a Gauss developement environment:</p>
+<pre class="shell"><code>lb-dev --name GaussDev_ImpactKit Gauss/v49r7
+cd GaussDev_ImpactKit</code></pre>
+<p>To modify or add a dec file, we need the DecFiles package which is still on svn:</p>
+<pre class="shell"><code>getpack Gen/DecFiles head
+make</code></pre>
+<p>This will populate the <code>./Gen/DecFiles/Options</code> directory with an python options file to generate events for each decfile, <code>(eventtype).py</code>. The location where the dec files are located is stored in <code>$DECFILESROOT</code> and we can check that the correct on is used by running</p>
+<pre class="shell"><code>./run $SHELL -c &#39;echo $DECFILESROOT&#39;</code></pre>
+<p>which should point <code>Gen/DecFiles</code> directory in the current development environment.</p>
+<blockquote>
+<p>Note that recompiling will not overwrite existing options file, it is necessary to remove by hand all of the python files in <code>./Gen/DecFiles/Options</code>.</p>
+</blockquote>
+<p>After this, to produce some generator level events:</p>
+<pre class="shell"><code>./run gaudirun.py Gauss-Job.py &#39;$GAUSSOPTS/GenStandAlone.py&#39; &#39;$DECFILESROOT/options/11164001.py&#39; &#39;$LBPYTHIA8ROOT/options/Pythia8.py&#39;</code></pre>
+<p>This will output a .xgen file containing simulated events, as well as a root file containing various monitoring histograms you will probably never want to look at.<br />
+As stated above, note that the number of events produced is <em>after generator level cuts</em> - this is also true for production requests.</p>
+<p>The .xgen file can be processed into something more usable with DaVinci:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co">&quot;&quot;&quot;Configure the variables below with:</span>
+<span class="co">decay: Decay you want to inspect, using &#39;newer&#39; LoKi decay descriptor syntax,</span>
+<span class="co">decay_heads: Particles you&#39;d like to see the decay tree of,</span>
+<span class="co">datafile: Where the file created by the Gauss generation phase is, and</span>
+<span class="co">year: What year the MC is simulating.</span>
+<span class="co">&quot;&quot;&quot;</span>
+<span class="co"># https://twiki.cern.ch/twiki/bin/view/LHCb/FAQ/LoKiNewDecayFinders</span>
+decay <span class="op">=</span> <span class="st">&quot;[ [B0]cc =&gt; ^(D- =&gt; ^K+ ^pi- ^pi-) ^pi+]CC&quot;</span>
+decay_heads <span class="op">=</span> [<span class="st">&quot;B0&quot;</span>, <span class="st">&quot;B~0&quot;</span>]
+datafile <span class="op">=</span> <span class="st">&quot;Gauss-11164001-5ev-20170504.xgen&quot;</span><span class="co"># N.B output filename includes today&#39;s date - change this!</span>
+year <span class="op">=</span> <span class="dv">2012</span>
+
+
+
+<span class="im">from</span> Configurables <span class="im">import</span> (
+    DaVinci,
+    EventSelector,
+    PrintMCTree,
+    MCDecayTreeTuple
+)
+<span class="im">from</span> DecayTreeTuple.Configuration <span class="im">import</span> <span class="op">*</span>
+
+
+<span class="co"># For a quick and dirty check, you don&#39;t need to edit anything below here.</span>
+<span class="co">##########################################################################</span>
+
+<span class="co"># Create an MC DTT containing any candidates matching the decay descriptor</span>
+mctuple <span class="op">=</span> MCDecayTreeTuple(<span class="st">&quot;MCDecayTreeTuple&quot;</span>)
+mctuple.Decay <span class="op">=</span> decay
+mctuple.ToolList <span class="op">=</span> [
+    <span class="st">&quot;MCTupleToolHierarchy&quot;</span>,
+    <span class="st">&quot;LoKi::Hybrid::MCTupleTool/LoKi_Photos&quot;</span>
+]
+<span class="co"># Add a &#39;number of photons&#39; branch</span>
+mctuple.addTupleTool(<span class="st">&quot;MCTupleToolKinematic&quot;</span>).Verbose <span class="op">=</span> <span class="va">True</span>
+mctuple.addTupleTool(<span class="st">&quot;LoKi::Hybrid::TupleTool/LoKi_Photos&quot;</span>).Variables <span class="op">=</span> {
+    <span class="st">&quot;nPhotos&quot;</span>: <span class="st">&quot;MCNINTREE((&#39;gamma&#39; == MCABSID))&quot;</span>
+}
+
+<span class="co"># Print the decay tree for any particle in decay_heads</span>
+printMC <span class="op">=</span> PrintMCTree()
+printMC.ParticleNames <span class="op">=</span> decay_heads
+
+<span class="co"># Name of the .xgen file produced by Gauss</span>
+EventSelector().Input <span class="op">=</span> [<span class="st">&quot;DATAFILE=&#39;</span><span class="sc">{0}</span><span class="st">&#39; TYP=&#39;POOL_ROOTTREE&#39; Opt=&#39;READ&#39;&quot;</span>.<span class="bu">format</span>(datafile)]
+
+<span class="co"># Configure DaVinci</span>
+DaVinci().TupleFile <span class="op">=</span> <span class="st">&quot;DVntuple.root&quot;</span>
+DaVinci().Simulation <span class="op">=</span> <span class="va">True</span>
+DaVinci().Lumi <span class="op">=</span> <span class="va">False</span>
+DaVinci().DataType <span class="op">=</span> <span class="bu">str</span>(year)
+DaVinci().UserAlgorithms <span class="op">=</span> [printMC, mctuple]</code></pre></div>
+<pre class="shell"><code>lb-run DaVinci/v41r0 gaudirun.py DaVinciOptions.py</code></pre>
+<p>This script will attempt to build an nTuple from the xgen file it is given, using the specified decay descriptor. If everything is working correctly, this should return at least one entry per event, corresponding to your signal candidate. The PrintMCTree algorithm will print to screen the full decay chain for each particle in &quot;decay_heads&quot; e.g:</p>
+<pre><code>&lt;--------------------------------- MCParticle ---------------------------------&gt;
+                Name         E         M         P        Pt       phi        Vz
+                           MeV       MeV       MeV       MeV      mrad        mm
+B~0                 228676.20   5279.58 228615.24   4575.10   3122.65    -18.05
++--&gt;D-              220232.04   1869.61 220224.11   4909.35  -2995.39     96.91
+|+--&gt;K+             150522.77    493.68 150521.97   3531.59   3092.01    120.50
+|+--&gt;pi-             12700.02    139.57  12699.26    351.94  -2113.03    120.50
+|+--&gt;pi-             57009.20    139.57  57009.03   1290.27  -2667.72    120.50
+|+--&gt;gamma               0.05      0.00      0.05      0.00      0.00    120.50
++--&gt;pi+               8444.15    139.57   8443.00    850.25   1231.87     96.91</code></pre>
+<p>, which is extremely helpful for knowing if your decfile is producing what you think it should. Note that in addition to your signal B0, it will also print out the decay chain for any B0 in the event, so you will regularly see other random B decays.</p>
+<h2 id="decfiles">DecFiles</h2>
+<pre><code># EventType: 11146031
+#
+# Descriptor: [B0 -&gt; (J/psi(1S) -&gt; mu+ mu-)  (K*0 -&gt; K+ pi-) (phi -&gt; K+ K-)]cc
+#
+# NickName: Bd_JpsiphiKst,KKmumuKpi=DecProdCut
+#
+# Cuts: DaughtersInLHCb
+#
+# CPUTime: &lt; 1 min
+#
+# Documentation:  Bd decay to Jpsi(to mu+ mu-), phi(to K+ K-) Kst(K+ pi-) with K+,K-,mu,mu,K+,pi- in acceptance
+# EndDocumentation
+#
+# PhysicsWG: B2Ch 
+# Tested: Yes
+# Responsible: Alessia Satta
+# Email: alessia.satta@cern.ch
+# Date: 20160514
+#</code></pre>
+<p>The information in the header is not just bookkeeping, almost all of it is parsed and changes what you get out at the end. The EventType is a series of flags which controls the generation. The rules for this are described in detail in <a href="https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf">LHCb-2005-034</a> For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias... Similarly, the document specifies the conventions for the &quot;NickName&quot; - which also has to be the filename. Note that once MC has been produced from a given DecFile, it is not allowed to be changed, so you never need to worry about which version of DecFiles you are looking at when trying to understand existing samples.</p>
+<p>The &quot;Cuts&quot; field specifies which one of a predetermined set of cut tools are used. The best way to understand these is to look at the source code: https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/</p>
+<h2 id="generator-level-cuts">Generator level cuts</h2>
+<p>Detector simulation is computationally expensive, and event generation is comparatively fast. Cuts at generator level save a huge amount of CPU and disk space (which means you can have more actually useful events) almost for free. At generator level you can only cut on pre-resolution quantities, so normally you want the generator cuts to be 100% efficient for selected events (within epsilon). The default example is to immediately remove events where the daughters are far outside the LHCb acceptance. This is implemented in &quot;DaugthersInLHCb&quot;, aka &quot;DecProdCut&quot; in the NickName. This requires that each &quot;stable charged particle&quot; is in a loose region around the LHCb acceptance (10-400 mrad in Theta).</p>
+<h2 id="loki-gencuttool">LoKi GenCutTool</h2>
+<p>Another method to apply generator level cuts is via the LoKi::GenCutTool. This is used via the &quot;InsertPythonCode&quot; command in the header, which allows to write python code which is inserted into the options file:</p>
+<pre><code># EventType: 11574020
+#
+# Descriptor: {[[B0]nos =&gt; nu_mu mu+ (D*(2010)- =&gt; (D~0 -&gt; K+ pi-) pi-)]cc, [[B0]os =&gt; anti_nu_mu mu- (D*(2010)+ =&gt; (D0 -&gt; K- pi+) pi+)]cc}
+#
+# NickName: Bd_Dst+munu=TightCuts
+# Cuts: &#39;LoKi::GenCutTool/TightCut&#39;
+# InsertPythonCode:
+#from Configurables import LoKi__GenCutTool
+#from Gauss.Configuration import *
+#gen = Generation()
+#gen.SignalRepeatedHadronization.addTool ( LoKi__GenCutTool , &#39;TightCut&#39; )
+#tightCut = gen.SignalRepeatedHadronization.TightCut
+#tightCut.Decay = &quot;[ (Beauty) ==&gt; ^(D~0 -&gt; ^K+ ^pi- {gamma} {gamma} {gamma}) ^mu+ nu_mu {X} {X} {X} {X} {X} {X} {X} {X} ]CC&quot;
+#tightCut.Preambulo += [
+#  &quot;from LoKiCore.functions import in_range&quot;  ,
+#  &quot;from GaudiKernel.SystemOfUnits import GeV, MeV&quot;  ,
+#  &quot;piKP     = GCHILD(GP,(&#39;K+&#39; == GABSID )) + GCHILD(GP,(&#39;pi-&#39; == GABSID ))&quot; ,
+#  &quot;piKPT     = GCHILD(GPT,(&#39;K+&#39; == GABSID )) + GCHILD(GPT,(&#39;pi-&#39; == GABSID ))&quot; ,
+#]
+#tightCut.Cuts      =    {
+# &#39;[pi+]cc&#39;   : &quot; in_range( 0.010 , GTHETA , 0.400 )&amp; ( GPT &gt; 700 * MeV )&quot; ,
+# &#39;[K-]cc&#39;   : &quot; in_range( 0.010 , GTHETA , 0.400 ) &amp; ( GPT &gt; 700 * MeV )&quot; ,
+# &#39;[mu+]cc&#39;  : &quot; in_range( 0.010 , GTHETA , 0.400 ) &amp; (GP &gt; 2500* MeV) &quot;,
+# &#39;[D~0]cc&#39;   : &quot;( piKP &gt; 15000 * MeV ) &amp; (piKPT &gt; 2300 * MeV)&quot;
+#    }
+# EndInsertPythonCode
+# Documentation: B -&gt; D*+ mu nu.  D* -&gt; D0 pi, D0 -&gt; K pi. Cuts for B -&gt; D* tau nu, tau-&gt; mu #analysis.</code></pre>
+<p>This requires the addition of &quot;TightCut&quot; to the nickname.</p>
+<h2 id="generator-cut-efficiency">Generator cut efficiency</h2>
+<p>The generator cut efficiency can be found from the GeneratorLog.xml file, which contains e.g:</p>
+<div class="sourceCode"><pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;efficiency</span><span class="ot"> name</span> <span class="ot">=</span> <span class="st">&quot;generator level cut&quot;</span><span class="kw">&gt;</span>
+    <span class="kw">&lt;after&gt;</span> 5 <span class="kw">&lt;/after&gt;</span>
+    <span class="kw">&lt;before&gt;</span> 27 <span class="kw">&lt;/before&gt;</span>
+    <span class="kw">&lt;value&gt;</span> 0.18519 <span class="kw">&lt;/value&gt;</span>
+    <span class="kw">&lt;error&gt;</span> 0.074757 <span class="kw">&lt;/error&gt;</span>
+<span class="kw">&lt;/efficiency&gt;</span></code></pre></div>
+<h2 id="controlling-decays">Controlling decays</h2>
+<p>To start with a simple example:</p>
+<pre><code># EventType: 12163001
+#
+# Descriptor: [B+ -&gt; (D~0 -&gt; K+ pi-) pi+]cc
+#
+# NickName: Bu_D0pi,Kpi=DecProdCut
+#
+# Cuts: DaughtersInLHCb
+#
+# Documentation: 
+#   Control channel for B-&gt;DK ADS and GLW analyses
+# EndDocumentation
+#
+# PhysicsWG: B2OC
+# Tested: Yes
+# Responsible: Paolo Gandini
+# Email: p.gandini1@physics.ox.ac.uk
+# Date: 20051208
+#
+Alias      MyD0        D0
+Alias Myanti-D0   anti-D0
+ChargeConj        MyD0       Myanti-D0
+#
+Decay B+sig
+  1.000     Myanti-D0  pi+               PHSP;
+Enddecay
+CDecay B-sig
+#
+Decay Myanti-D0
+  1.000        K+        pi-                    PHSP;
+Enddecay
+CDecay MyD0
+#
+End</code></pre>
+<p>This DecFile defines a signal B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of &quot;MyD0&quot;. If the decay was to &quot;D0&quot; rather than &quot;MyD0&quot;, the D0 would decay via all of the decay modes implemented in DECAY.DEC. The final part of each decay is the actual physics model used - in this case &quot;PHSP&quot;, which is phase space only (matrix element = constant). Note that with PHSP the daughters are completely unpolarized - for anything other than (spin 0) to (spin0 spin0) this will get the angular momentum wrong!</p>
+<h1 id="two-body-decays---getting-angular-momentum-right">Two body decays - getting angular momentum right</h1>
+<p>EvtGen has specific models for each two body spin configuration, for example Scalar to Vector+Scalar (SVS), and Vector to lepton+lepton(VLL)</p>
+<pre><code>#
+Decay B+sig
+  1.000     MyJ/psi  K+                   SVS;
+Enddecay
+CDecay B-sig
+#
+Decay MyJ/psi
+  1.000     mu+  mu-                      PHOTOS  VLL;
+Enddecay</code></pre>
+<p>For decays to two vectors, there is a more complicated polarization structure which needs to be specified - for example here the fraction and phase for each helicity are set according to measured values:</p>
+<pre><code>Define Hp 0.159
+Define Hz 0.775
+Define Hm 0.612
+Define pHp 1.563
+Define pHz 0.0
+Define pHm 2.712
+#
+Alias      MyJ/psi    J/psi
+Alias      MyK*0      K*0
+Alias      Myanti-K*0 anti-K*0
+ChargeConj MyK*0      Myanti-K*0
+ChargeConj MyJ/psi    MyJ/psi
+#
+Decay B0sig
+  1.000         MyJ/psi   MyK*0          SVV_HELAMP Hp pHp Hz pHz Hm pHm;
+Enddecay
+Decay anti-B0sig
+  1.000         MyJ/psi   Myanti-K*0     SVV_HELAMP Hm pHm Hz pHz Hp pHp;
+Enddecay</code></pre>
+<h1 id="bodies">3+ bodies</h1>
+<p>For 3+ bodies the physics models get more complicated. For a fully hadronic final state, typically a Dalitz model will be specified, e.g:</p>
+<pre><code># D_DALITZ includes resonances contributions (K*(892), K*(1430), K*(1680))
+Decay MyD-
+  1.000    K+        pi-    pi-          D_DALITZ;
+Enddecay
+CDecay MyD+</code></pre>
+<p>Any time you see a 3+ body decay with the PHSP model, you know it will be very far from reality. If you have no other information sometimes this is the best you can do, though.</p>
+<p>A semileptonic decay would typically be produced according to some form factor model, e.g</p>
+<pre><code>Decay B0sig 
+# FORM FACTORS as per HFAG PDG10
+   1   MyD*-        mu+  nu_mu         PHOTOS  HQET 1.20 1.426 0.818 0.908;
+  #
+Enddecay
+CDecay anti-B0sig</code></pre>
+<p>here the numbers correspond to measured values for the form factor parameters. ## Cocktail decays Often you will want to simulate more than one decay mode in a sample, e.g:</p>
+<pre><code>Decay MyD_s+
+ 0.0259 phi      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0267 eta      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0099 eta&#39;     mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0037 K0       mu+     nu_mu                      PHOTOS  ISGW2;  
+ 0.0018 K*0      mu+     nu_mu                      PHOTOS  ISGW2;
+ 0.0020 f_0      mu+     nu_mu                      PHOTOS  ISGW2; 
+ 0.0059 mu+      nu_mu                              PHOTOS   SLN; 
+Enddecay
+CDecay MyD_s-</code></pre>
+<p>Note that the fractions will always be renormalised to sum to 1 - you can directly use PDG branching fractions without having to rescale by hand.</p>
+<h2 id="final-state-radiation">Final state radiation</h2>
+<p>After generating the decay, final state radiation is added using PHOTOS. Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via &quot;noPhotos&quot;</p>
+<h2 id="changing-particle-masses-lifetimes-widths">Changing particle masses / lifetimes/ widths</h2>
+<p>Sometimes you need to change the mass or lifetime of a particle, either because the initial values are wrong, or the particle you actually want doesn't exist in EvtGen, and you need to adapt an existing particle. This can be done with python code inserted in the header:</p>
+<pre><code># InsertPythonCode:
+#from Configurables import LHCb__ParticlePropertySvc
+#LHCb__ParticlePropertySvc().Particles = [ 
+# &quot;N(1440)+              636       12212   1.0      1.4400000      2.194041e-24                 N(1440)+           21440      0.00&quot;,
+# &quot;N(1440)~-             637      -12212  -1.0      1.4400000      2.194841e-24                   anti-N(1440)-           -21440      0.00&quot;,
+#&quot;N(1520)+              420        2124   1.0      1.52000000      5.723584e-24                   N(1520)+           21520      0.00&quot;,
+# &quot;N(1520)~-             421       -2124  -1.0      1.52000000     5.723584e-24                   anti-N(1520)-           -21520      0.00&quot;,
+#&quot;N(1535)+              713       22212   1.0      1.53500000      4.388081e-24                   N(1535)+           21535      0.00&quot;,
+#&quot;N(1535)~-             714      -22212  -1.0      1.53500000      4.388081e-24                   anti-N(1535)-           -21535      0.00&quot;,
+#&quot;N(1720)+              775       32124   1.0      1.72000000      2.632849e-24                   N(1720)+           21720      0.00&quot;,
+#&quot;N(1720)~-             776      -32124  -1.0      1.72000000      2.632849e-24                   anti-N(1720)-           -21720      0.00&quot;
+#]
+# EndInsertPythonCode</code></pre>
+<p>The format is:</p>
+<pre><code>#                    GEANTID    PDGID  CHARGE   MASS(GeV)      TLIFE(s)                    EVTGENNAME    PYTHIAID    MAXWIDTH</code></pre>
+<h2 id="filtering-a-simulated-sample">Filtering a simulated sample</h2>
+<p>For larger production requests, the amount of disk space required to store the sample becomes a problem. Therefore, a filtering of the final candidates obtained after the stripping step in the MC production can be applied. As this does not reduce the CPU requirements, filtering steps are best accompanied by a matching (but looser) set of generator cuts.</p>
+<p>Assuming we have a sample of simulated D*+ -&gt; D0( -&gt; K pi ) pi which we would like to filter on the Turbo line <code>'Hlt2CharmHadD02KPi_XSecTurbo'</code>:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> GaudiConf <span class="im">import</span> IOHelper
+IOHelper().inputFiles(
+   [<span class="st">&#39;root://eoslhcb.cern.ch//eos/lhcb/grid/prod/lhcb/MC/2015/ALLSTREAMS.DST/00057933/0000/00057933_00000232_3.AllStreams.dst&#39;</span>],
+    clear<span class="op">=</span><span class="va">True</span>)</code></pre></div>
+<p>We also do not need any events where the D0 candidate has a transverse momentum less than 3 GeV. We already know how to write the filter for this:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> PhysSelPython.Wrappers <span class="im">import</span> AutomaticData, SelectionSequence, Selection
+<span class="im">from</span> Configurables <span class="im">import</span> FilterDesktop
+
+line <span class="op">=</span> <span class="st">&#39;Hlt2CharmHadD02KPi_XSecTurbo&#39;</span>
+Dzeros <span class="op">=</span> AutomaticData(<span class="st">&#39;/Event/Turbo/&#39;</span><span class="op">+</span>line<span class="op">+</span><span class="st">&#39;/Particles&#39;</span>)
+
+pt_selection <span class="op">=</span> FilterDesktop(
+    <span class="st">&#39;D0_PT_selector&#39;</span>, Code<span class="op">=</span><span class="st">&#39;PT &gt; 3000*MeV&#39;</span>)
+
+sel <span class="op">=</span> Selection(<span class="st">&#39;D0_PT_selection&#39;</span>,
+                Algorithm<span class="op">=</span>pt_selection,
+                RequiredSelections<span class="op">=</span>[Dzeros])
+
+selseq <span class="op">=</span> SelectionSequence(<span class="st">&#39;D0_Filtered&#39;</span>, sel)</code></pre></div>
+<p>Instead of writing a ntuple, we need to write out the events to an (m)DST which pass <code>selseq</code>. The necessary configuration is basically identical in all filtering options in use and for the DST format reads</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> DSTWriters.Configuration <span class="im">import</span> (SelDSTWriter, stripDSTStreamConf, stripDSTElements)
+
+SelDSTWriterElements <span class="op">=</span> {<span class="st">&#39;default&#39;</span>: stripDSTElements()}
+SelDSTWriterConf <span class="op">=</span> {<span class="st">&#39;default&#39;</span>: stripDSTStreamConf()}
+
+dstWriter <span class="op">=</span> SelDSTWriter(<span class="st">&quot;TurboFiltered&quot;</span>,
+                         StreamConf<span class="op">=</span>SelDSTWriterConf,
+                         MicroDSTElements<span class="op">=</span>SelDSTWriterElements,
+                         OutputFileSuffix <span class="op">=</span><span class="st">&#39;&#39;</span>,
+                         SelectionSequences<span class="op">=</span>[selseq]  <span class="co"># Only events passing selseq are written out!</span>
+                         
+<span class="im">from</span> Configurables <span class="im">import</span> DaVinci
+DaVinci().appendToMainSequence([dstWriter.sequence()])</code></pre></div>
+<p>Running these options (after adding the usual <code>DaVinci()</code> options like data type, tags etc) produces the file <code>SelD0_Filtered.dst</code> and you can verify that every event has a candidate passing <code>'Hlt2CharmHadD02KPi_XSecTurbo'</code> with at least 3 GeV transverse momentum.</p>
+<div id="filtering-in-production" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="filtering-in-production" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Filtering in production</h2>
+</div>
+<div class="panel-body">
+<ol style="list-style-type: decimal">
+<li>Option files need to be tested and checked by the MC liaisons.</li>
+<li>Exist in the <a href="http://svnweb.cern.ch/world/wsvn/lhcb/DBASE/tags/WG">WG</a> project: Lots and lots of examples.</li>
+<li>More details and naming conventions on <a href="https://twiki.cern.ch/twiki/bin/view/LHCbPhysics/FilteredSimulationProduction">TWiki</a></li>
+</ol>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>

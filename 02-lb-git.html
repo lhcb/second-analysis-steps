@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second analysis steps</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="200" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second analysis steps</h1>
+          <h2 class="subtitle">Using git to develop LHCb software</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Learn how to clone specific LHCb packages to a local development directory</li>
+<li>Learn how to make changes and upload them to be reviewed by others</li>
+</ul>
+</div>
+</div>
+<div id="prerequisites" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="prerequisites" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Prerequisites</h2>
+</div>
+<div class="panel-body">
+<p>Before starting, you should have a basic understanding of how to use <code>git</code>, similar to what has been taught during the starterkit.</p>
+</div>
+</div>
+<p>In this lesson, we'll show you a complete workflow for developing the LHCb software using the <code>git</code> version control system. At LHCb, we use Gitlab to manage our git repositories. Among other features, Gitlab allows you to browse the source code for each project, and to review new changes (called <em>merge requests</em>) in a convenient web interface. You can find the CERN Gitlab instance at <a href="https://gitlab.cern.ch" class="uri">https://gitlab.cern.ch</a>.</p>
+<p>In principle, there are multiple ways of interacting with the LHCb software repositories:</p>
+<ol style="list-style-type: decimal">
+<li>A vanilla git workflow using only the standard git commands. This requires you to <code>clone</code> and compile an entire LHCb project at a time.</li>
+<li>An LHCb-specific workflow using a set of <code>lb-*</code> subcommands. This allows you to check out individual packages inside a project, and streamlines the modification of a few packages at a time. This is closer to the previously used <code>getpack</code> command.</li>
+</ol>
+<p>Here, we want to focus on the second workflow.</p>
+<p>Before jumping in by creating a project in Gitlab, you should make sure that your local git configuration and your settings on Gitlab are sufficiently set up:</p>
+<p>Your name and email address should be set up in your local <code>git</code> configuration. To ensure that this is the case, run</p>
+<pre><code>$ git config --global user.name &quot;Your Name&quot;
+$ git config --global user.email &quot;Your Name &lt;your.name@cern.ch&gt;&quot;</code></pre>
+<p>and put in your information.</p>
+<p>Next, connect to <a href="https://gitlab.cern.ch" class="uri">https://gitlab.cern.ch</a> and log in with your CERN credentials.</p>
+<p>Visit <a href="https://gitlab.cern.ch/profile/keys" class="uri">https://gitlab.cern.ch/profile/keys</a> and add an SSH key.</p>
+<p>Run this LHCb-specific configuration command:</p>
+<pre><code>git config --global lb-use.protocol ssh</code></pre>
+<p>This makes sure the LHCb commands use the ssh protocol instead of https.</p>
+<p>In the Gitlab web interface, create a new project by clicking on the &quot;New project&quot; button. Give your project the name &quot;LHCbSK&quot;.</p>
+<p>We will now set up a local LHCb development area that is connected to the git repository you just created. In order to create a new dev environment, run</p>
+<pre><code>$ lb-dev --list LHCb</code></pre>
+<p>to see which versions of the LHCb project are available. Pick the newest one and run</p>
+<pre><code>$ lb-dev --name LHCbSK LHCb/&lt;version&gt;</code></pre>
+<p>where you need to insert the version you picked earlier. This will automatically run <code>git init</code> to create a new git repository with some initial files (<code>Makefile</code>, <code>CMakeLists.txt</code>, etc.). In order to connect your repository with the remote one, run</p>
+<pre><code>cd LHCbSK
+git remote add origin ssh://git@gitlab.cern.ch:7999/&lt;username&gt;/LHCbSK.git</code></pre>
+<p>where you need to substitute your username. Run</p>
+<pre><code>git push -u origin master</code></pre>
+<p>once to define <code>master</code> as the remote branch that we should push to by default.</p>
+<p>For the purpose of this tutorial, we've set up an <code>SKTest</code> project containing the package <code>TheTestPackage</code>. In order to define <code>SKTest</code> as your currently active project, run</p>
+<pre><code>git lb-use SKTest</code></pre>
+<p>This will also fetch the <code>SKTest</code> git repository from Gitlab.</p>
+<p>You can then run</p>
+<pre><code>git lb-checkout SKTest/master TheTestPackage</code></pre>
+<p>to check out the files inside the <code>SKTest</code> project that belong to the <code>TheTestPackage</code> package. This performs <code>git checkout</code> under the hood and commits the files into the local (synthetic) branch.</p>
+<p>You can now run</p>
+<pre><code>make</code></pre>
+<p>to build the project, make some changes, run <code>make</code> again, etc. You can also use</p>
+<pre><code>make test</code></pre>
+<p>to run the tests. Once you're happy with the changes, run</p>
+<pre><code>git add &lt;your-changed-files&gt;</code></pre>
+<p>where you have to specify all files with changes that you want to store, and</p>
+<pre><code>git commit</code></pre>
+<p>to store them in a new commit. This will open up a text editor that will allow you to type in a commit message.</p>
+<div id="committing-often" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="committing-often" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Committing often</h2>
+</div>
+<div class="panel-body">
+<p>As new commits are only stored in your local repository, there's no cost to committing often. You should try to make a new commit every time you've made modifications that can be considered a single unit of changes.</p>
+</div>
+</div>
+<p>Once you want to upload your commits for review, run</p>
+<pre><code>git lb-push SKTest &lt;username&gt;-new-feature</code></pre>
+<p>to create a new <code>&lt;username&gt;-new-feature</code> branch on the main Gitlab repository and upload your commits to it. This will calculate the changes between your local dev repository and the remote project repository, and create corresponding commits for the remote project. You can now create a merge request by going to <a href="https://gitlab.cern.ch/LHCb-SVN-mirrors/SKTest/merge_requests/new" class="uri">https://gitlab.cern.ch/LHCb-SVN-mirrors/SKTest/merge_requests/new</a>, selecting the <code>&lt;username&gt;-new-feature</code> branch as the source and <code>master</code> as the target. Add a title for your merge request and explain what you've done in the main text.</p>
+<div id="merge-conflicts" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="merge-conflicts" class="challenge panel panel-success"><span class="glyphicon glyphicon-pencil"></span>Merge conflicts</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Working with a partner, try to create a merge conflict by making changes to the same file. If you don't have someone else to work with, you can simulate this by creating a second development area.</li>
+<li>Now, try to resolve the merge conflict. This is a bit complicated because of the way the local repository is set up. Take a look at <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Replacement_for_svn_update_in_lo" class="uri">https://twiki.cern.ch/twiki/bin/view/LHCb/Git4LHCb#Replacement_for_svn_update_in_lo</a> for pointers.</li>
+</ul>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="https://lhcb.github.io/lhcb/starterkit">Starterkit</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>

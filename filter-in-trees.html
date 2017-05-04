@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second steps in LHCb</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second steps in LHCb</h1>
+          <h2 class="subtitle">Reuse particles from a decay tree</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Learn how to extract particles from a decay tree</li>
+<li>Build a new particle from the extracted particles</li>
+</ul>
+</div>
+</div>
+<p>Sometimes we want to extract a portion of the decay tree in order to build a different decay. To do that, we need to put the particles we're interested in in a new container so they can afterwards be used as inputs to a <code>CombineParticles</code> instance (as we saw in <a href="https://lhcb.github.io/second-analysis-steps/01-building-decays.html">the selection framework lesson</a>). To achieve this we can use the <code>FilterInTrees</code> algorithm, a simple variation of <code>FilterDesktop</code> (<a href="https://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/hlt/latest_doxygen/de/d8e/class_filter_in_trees.html">doxygen</a>).</p>
+<p>Let's start from the example in <a href="https://lhcb.github.io/second-analysis-steps/01-building-decays.html">the selection framework lesson</a> and let's check that the <span class="math inline">\(\pi^-\)</span> child of the <span class="math inline">\(D^0\)</span> does not come from a <span class="math inline">\(\rho\to\pi^+\pi^-\)</span>. To do that, we have to extract the <span class="math inline">\(\pi^-\)</span> from <code>([D0 -&gt; pi+ K-]CC)</code> and combine it with all pions in <code>Phys/StdAllNoPIDsPions/Particles</code>.</p>
+<p>Using <code>FilterInTrees</code> is done in the same way we would use <code>FilterDesktop</code>:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> Configurables <span class="im">import</span> FilterInTrees
+<span class="im">from</span> PhysSelPython.Wrappers <span class="im">import</span> Selection, DataOnDemand
+
+decay_tree_location <span class="op">=</span> <span class="st">&#39;/Event/AllStreams/Phys/D2hhCompleteEventPromptDst2D2RSLine/Particles&#39;</span>
+d0_from_dst <span class="op">=</span> FilterInTrees(<span class="st">&#39;d0_from_dst_filter&#39;</span>, Code<span class="op">=</span><span class="st">&quot;DECTREE(&#39;[Charm -&gt; pi+ K-]CC&#39;)&quot;</span>)
+d0_from_dst_sel <span class="op">=</span> Selection(<span class="st">&quot;d0_from_dst_sel&quot;</span>,
+                            Algorithm<span class="op">=</span>d0_from_dst,
+                            RequiredSelections<span class="op">=</span>[AutomaticData(Location<span class="op">=</span>decay_tree_location)])
+pions_from_d0 <span class="op">=</span> FilterInTrees(<span class="st">&#39;pions_from_d0_filter&#39;</span>,Code<span class="op">=</span><span class="st">&quot;(&#39;pi+&#39; == ABSID)&quot;</span>)
+pions_from_d0_sel <span class="op">=</span> Selection(<span class="st">&quot;pions_from_d0_sel&quot;</span>,
+                              Algorithm<span class="op">=</span>pions_from_d0,
+                              RequiredSelections<span class="op">=</span>[d0_from_dst_sel])</code></pre></div>
+<p>The output of <code>pions_from_d0_sel</code> is a container with all the pions coming from the <span class="math inline">\(D^0\)</span>.</p>
+<div id="question" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="question" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Question</h2>
+</div>
+<div class="panel-body">
+<p>Do you see why we couldn't use something simple like</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">pions_from_d0 <span class="op">=</span> FilterInTrees(<span class="st">&#39;pions_from_d0_filter&#39;</span>, Code<span class="op">=</span><span class="st">&quot;&#39;pi+&#39; == ABSID&quot;</span>)</code></pre></div>
+<p>?</p>
+</div>
+</div>
+<p>Note how we had to do the process in two steps in order to avoid getting the soft pion from the <span class="math inline">\(D^*\)</span>. Sometimes this makes things quite difficult, but almost all problems can be solved with a smart use of the <code>DECTREE</code> container in an intermediate step.</p>
+<div id="selecting-the-soft-pion" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="selecting-the-soft-pion" class="challenge panel panel-success"><span class="glyphicon glyphicon-pencil"></span>Selecting the soft pion</h2>
+</div>
+<div class="panel-body">
+<p>Can you find of a way of selecting the soft pion? Hint: use the <code>FilterDecays</code> algorithm, in which you specify a decay descriptor as <code>Code</code>, marking the desired particle(s).</p>
+</div>
+</div>
+<p>The final step is easy, very similar to <a href="https://lhcb.github.io/second-analysis-steps/01-building-decays.html">building your own decay</a>:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> Configurables <span class="im">import</span> CombineParticles
+<span class="im">from</span> PhysSelPython.Wrappers <span class="im">import</span> Selection, DataOnDemand
+
+Pions <span class="op">=</span> DataOnDemand(<span class="st">&#39;Phys/StdAllNoPIDsPions/Particles&#39;</span>)
+rho <span class="op">=</span> CombineParticles(<span class="st">&#39;rho_particles&#39;</span>,
+                       DecayDescriptor<span class="op">=</span>[<span class="st">&#39;rho(770)0 -&gt; pi+ pi-&#39;</span>],
+                       CombinationCut<span class="op">=</span><span class="st">&quot;ADAMASS(&#39;rho(770)0&#39;) &lt; 300*MeV&quot;</span>,
+                       MotherCut<span class="op">=</span><span class="st">&#39;(VFASPF(VCHI2/VDOF)&lt; 9)&#39;</span>)
+rho_sel <span class="op">=</span> Selection(<span class="st">&#39;rho_sel&#39;</span>,
+                    Algorithm<span class="op">=</span>rho,
+                    RequiredSelections<span class="op">=</span>[pions_from_d0_sel, Pions])</code></pre></div>
+<p>Unfortunately, the <code>CombineParticles</code> example we just wrote is not exactly what we meant, since it will actually build <span class="math inline">\(\rho\)</span> from all pions it gets as input, not using one from our <code>pions_from_d0</code> selection and one from <code>'Phys/StdAllNoPIDsPions/Particles'</code>. How to solve this? We have to get creative and use the tools at hand: for example, we could use <code>SubstitutePID</code> from the previous lesson to change the PID of the pions in the <code>pions_from_d0</code> selection to kaon and build <code>[rho(770)0 -&gt; K+ pi-]CC</code> and then change again the PID of the kaon to a pion. Of course, if we were reconstructing <span class="math inline">\(K^{*}(892)^{0} \to K^{-}\pi^{+}\)</span> with <code>Phys/StdAllLooseKaons/Particles</code> instead, for example, we would already have everything we need since the ambiguity wouldn't exist.</p>
+<div id="an-interesting-detail" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="an-interesting-detail" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>An interesting detail</h2>
+</div>
+<div class="panel-body">
+<p>One can use <code>FilterInTrees</code> and <code>FilterDecays</code> to select several particles at once and obtain a flattened list. For example, if we had a Stripping line that builds <code>[B-  -&gt; (^D0 -&gt; ^K- ^pi+) ^pi-]cc</code> and we wanted to combine the <span class="math inline">\(D^0\)</span> and <span class="math inline">\(\pi^-\)</span> with an external <span class="math inline">\(\pi^0\)</span> to build <code>[B- -&gt; D0 pi- pi0]cc</code>, we could do</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">flatlist <span class="op">=</span> FilterInTrees (<span class="st">&quot;FlatList&quot;</span>, Code<span class="op">=</span><span class="st">&quot;(&#39;D0&#39; == ABSID) | (&#39;pi-&#39; == ABSID)&quot;</span>)
+<span class="im">from</span> Configurables <span class="im">import</span> CombineParticles
+add_pi0 <span class="op">=</span> CombineParticles(<span class="st">&quot;MakeB&quot;</span>,
+DecayDescriptor <span class="op">=</span> <span class="st">&quot;[B- -&gt; D0 pi- pi0]cc&quot;</span>,
+...
+Inputs<span class="op">=</span>[flatlist, resolvedPi0])</code></pre></div>
+<p><code>flatlist</code> contains both <span class="math inline">\(D^0\)</span> and <span class="math inline">\(\pi^-\)</span>, which are then used to build the <span class="math inline">\(B\)</span>.</p>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>

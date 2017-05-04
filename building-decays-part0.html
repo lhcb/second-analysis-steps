@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second analysis steps</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second analysis steps</h1>
+          <h2 class="subtitle">Building your own decay. The Selection Framework</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Learn the concepts behind the LHCb selection framework</li>
+<li>Learn the advantages of the LHCb selection framework</li>
+</ul>
+</div>
+</div>
+<p>In order to perform most physics analyses we need to build a <em>decay chain</em> with reconstructed particles that represents the physics process we want to study. In LHCb, this decay chain can be built through <code>LHCb::Particle</code> and <code>LHCb::MCParticle</code> objects that represent individual particles and contain links to their children, also represented by the same type of object.</p>
+<p>We'll learn all the concepts involved by running through our usual full example of the <span class="math inline">\(D^\ast\rightarrow D^0(\rightarrow K^{-} \pi^{+}) \pi\)</span> decay chain.</p>
+<p>The LHCb approach to building decays is from the bottom up. Therefore, to build <span class="math inline">\(D^\ast\rightarrow D^0(\rightarrow K^{-} \pi^{+}) \pi\)</span> we need to</p>
+<ol style="list-style-type: decimal">
+<li>Get input pions and kaons and filter them according to our physics needs.</li>
+<li>Combine a pion and a kaon to build a <span class="math inline">\(D^0\)</span>, and apply selection cuts to it.</li>
+<li>Combine this <span class="math inline">\(D^0\)</span> with a pion to build the <span class="math inline">\(D^\ast\)</span>, again filtering when necessary.</li>
+</ol>
+<p>To do that, we need to know a little bit more about how the LHCb analysis framework works.</p>
+<p>As discussed in the <a href="http://lhcb.github.io/first-analysis-steps/01-davinci.html">Gaudi introduction</a>, <code>Gaudi</code> is based on the event-by-event sequential (chained) execution of algorithms wrapped in a <code>GaudiSequencer</code>, which takes care of handling the execution order such that processing stops when an algorithm is <em>not passed</em>. However, it does not handle the data dependencies between these algorithms nor does it give easy access to them. To solve this problem, the <a href="https://twiki.cern.ch/twiki/bin/view/LHCb/ParticleSelection">Selection Framework</a> was created, and it is based on two types of objects: <code>Selection</code> and <code>SelectionSequence</code>:</p>
+<ul>
+<li><p>The <code>Selection</code> is the basic unit of the framework. It uses DaVinci algorithms to process <code>LHCb::Particles</code>and writes them to a TES location easily findable through its <code>outputLocation</code> method. Additionally, it knows about other <code>Selections</code> that it requires to pass in order to obtain input particles through its <code>RequiredSelections</code> argument. A <code>Selection</code> requires <em>all</em> of its <code>RequiredSelections</code> to pass.</p></li>
+<li><p>The <code>SelectionSequence</code> takes a <code>Selection</code> object, resolves its <code>Selection</code> requirements, and builds a flat, chained and ordered list of <code>Selections</code>. It then exports (via the <code>selection</code> method) a self-contained <code>GaudiSequencer</code> with all the algorithm configurables necessary to run the selection. It also makes the output locations of the data written by the selection chain available via the <code>outputLocations</code> method.</p></li>
+</ul>
+<p>Additionally, we need algorithms to perform the particle combination and filtering (or other data processing capabilities), since <code>Selection</code>s don't do any work by themselves, but just organize the dependencies properly. Two of the most important data processing algorithms are <code>CombineParticles</code> and <code>FilterDesktop</code>, which will be discussed in the <a href="building-decays-part1.html">next lesson</a>.</p>
+<p>The advantages of using this framework are several:</p>
+<ul>
+<li>Building the algorithms with bare Configurables and chaining their <code>Input</code> and <code>Output</code> is a responsibility of the users. This means the user needs to put the algorithms in the correct order, not only chaining properly the inputs/outputs but also executing the algorithms in sequence. The use of the Selection Framework places all algorithms in <em>correct sequences in the optimal order</em>, allowing to achieve the maximal possible CPU efficiency.</li>
+<li>Its <em>reusability</em>: one can use/re-use the same code for data analysis on &quot;user&quot;-level for MC processing for building of Stripping lines, since usually only the input particles need to be changed.</li>
+<li><em>Easiness of debugging</em>: one can visualize the selection chain, for example using the <code>PrintSelection</code> algorithm for debugging of the data flow.</li>
+<li>Some (advanced) tasks are <em>virtually impossible</em> to do without it, such as accessing some features for MC µDST (MCTruth for inclusive lines, for example) or applying the momentum scaling in Turbo.</li>
+</ul>
+<div id="the-lhcb-singletons-and-usability" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="the-lhcb-singletons-and-usability" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>The LHCb singletons and usability</h2>
+</div>
+<div class="panel-body">
+<p>A big part of the reusability of the Selection objects is thanks to how the LHCb framework is designed: all LHCb algorithms need an explicit and unique name because they are <em>singletons</em> (a <a href="http://en.wikipedia.org/wiki/Singleton_pattern">singleton</a> is a software design pattern that restricts the instantiation of a class to one object). As a consequence of this, only one algorithm with a given name can be instantiated.</p>
+<p>This allows to reuse and reload algorithms that have already been created in a configuration sequence. For example:</p>
+<ul>
+<li>We could create a generic selection for building <span class="math inline">\(D^0\)</span> with a known name, put it in a <code>build_d0.py</code> file and use (and even modify) it in another file loaded in the same <code>gaudirun.py</code> call.</li>
+<li>We could write the data-only parts of our selection in one file and the MC-only separately (typically inputs are different), but setting the same names for the algorithms. Then, our <code>DecayTreeTuple</code> code could be common, as the selection would be loaded &quot;by-name&quot;.</li>
+</ul>
+<p>This is very useful to build complicated configuration chains, but it's <em>very easy</em> to have problems if our selection/algorithm names are not unique. Therefore, it's very important to pay attention to the algorithm names (we will see how to minimize this problem in the <a href="building-decays-part2.html">final Selection Framework lesson</a>).</p>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>

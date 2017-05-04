@@ -27,7 +27,7 @@
     <div class="container card">
       <div class="banner">
         <a href="https://lhcb.github.io/second-analysis-steps/">
-          <img src="img/starterkit.png" height="200" alt="LHCb Starterkit">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
         </a>
       </div>
       <div class="row">
@@ -64,10 +64,10 @@ subs <span class="op">=</span> SubstitutePID(
     <span class="co"># note that SubstitutePID can&#39;t handle automatic CC</span>
     Substitutions <span class="op">=</span> {
         <span class="st">&#39;Charm -&gt; (D0 -&gt; ^K- pi+) Meson&#39;</span>: <span class="st">&#39;pi-&#39;</span>,
-        <span class="co">&#39;Charm -&gt; (D0 -&gt; ^K+ pi-) Meson&#39;</span>: <span class="st">&#39;pi+&#39;</span>
+        <span class="st">&#39;Charm -&gt; (D0 -&gt; ^K+ pi-) Meson&#39;</span>: <span class="st">&#39;pi+&#39;</span>
     }
 )</code></pre></div>
-<p>The algorithm is configured with a name <code>MakeD02pipi</code>. In the <code>Code</code> argument we need to specify the initial selection. This is done by using LoKi functors. Since we know we will be using an already prepared selection, we can simply use the <code>DECTREE</code> functor to search for candidates fulfilling this decay structure. See the <a href="http://lhcb.github.io/first-analysis-steps/06-loki-functors.html">lesson on LoKi</a> for more info on what you can do here.</p>
+<p>The algorithm is configured with a name <code>MakeD02pipi</code>. In the <code>Code</code> argument we need to specify the initial selection. This is done by using LoKi functors. Since we know we will be using an already prepared selection, we can simply use the <code>DECTREE</code> functor to search for candidates fulfilling this decay structure. See the <a href="http://lhcb.github.io/first-analysis-steps/loki-functors.html">lesson on LoKi</a> for more info on what you can do here.</p>
 <p>Now we ware ready to specify which hypotheses to change. <code>Substitutions</code> is a dictionary where the keys are decay descriptors and the values are the names of the replacement particles. The particle that should be replaced is marked with a <code>^</code>. So in the example above</p>
 <div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co">&#39;Charm -&gt; (D0 -&gt; ^K- pi+) Meson&#39;</span>: <span class="st">&#39;pi-&#39;</span></code></pre></div>
 <p>means: Look for a decay of a Charm-particle into D0 plus any meson, where the D0 decays to (K- pi+) and replace the K- with a pi-.</p>
@@ -126,9 +126,10 @@ DaVinci().appendToMainSequence([seq])</code></pre></div>
         </div>
       </div>
       <div class="footer">
-        <a class="label swc-blue-bg" href="https://lhcb.github.io/lhcb/starterkit">Starterkit</a>
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
         <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
         <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
       </div>
     </div>
     <!-- Javascript placed at the end of the document so the pages load faster -->

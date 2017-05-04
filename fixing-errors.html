@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>LHCb Starterkit: Second steps in LHCb</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.css" />
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script>
+     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+     ga('create', 'UA-63818884-1', 'auto');
+     ga('send', 'pageview');
+    </script>
+  </head>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="https://lhcb.github.io/second-analysis-steps/">
+          <img src="img/starterkit.png" height="100" alt="LHCb Starterkit">
+        </a>
+      </div>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">Second steps in LHCb</h1>
+          <h2 class="subtitle">What to do when something fails</h2>
+<div id="learning-objectives" class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="learning-objectives" class="objectives panel panel-warning"><span class="glyphicon glyphicon-certificate"></span>Learning Objectives</h2>
+</div>
+<div class="panel-body">
+<ul>
+<li>Learn how to read the logs to know where things are breaking</li>
+<li>Learn how to get a glimpse of where algorithms are writing in the TES</li>
+</ul>
+</div>
+</div>
+<p>When chaining complex workflows (building particles, combining them, etc) we find that our ntuple is not written while we don't have any errors. The first step is to look at the logs. Let's first go back at what we learned <a href="https://lhcb.github.io/second-analysis-steps/01-building-decays.html">when building our own decays</a> and rerun again (saving the output to a log file!).</p>
+<p>We can scroll through the log until we find our selections, where we will see something like this:</p>
+<pre><code>Sel_D0            SUCCESS Number of counters : 13
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | &quot;# D0 -&gt; pi-  K+ &quot;                              |      1000 |         43 |   0.043000 |    0.20286 |      0.0000 |      1.0000 |
+ | &quot;# D~0 -&gt; pi+  K- &quot;                             |      1000 |         55 |   0.055000 |    0.23233 |      0.0000 |      2.0000 |
+ | &quot;# K+&quot;                                          |      1000 |       1161 |     1.1610 |     1.9155 |      0.0000 |      21.000 |
+ | &quot;# K-&quot;                                          |      1000 |       1135 |     1.1350 |     2.1248 |      0.0000 |      29.000 |
+ | &quot;# Phys/StdAllLooseKaons&quot;                       |      1000 |      24448 |     24.448 |     19.363 |      1.0000 |      136.00 |
+ | &quot;# Phys/StdAllNoPIDsPions&quot;                      |      1000 |      42328 |     42.328 |     26.566 |      3.0000 |      181.00 |
+ | &quot;# input particles&quot;                             |      1000 |      66776 |     66.776 |     45.704 |      4.0000 |      317.00 |
+ | &quot;# pi+&quot;                                         |      1000 |       1962 |     1.9620 |     2.3436 |      0.0000 |      26.000 |
+ | &quot;# pi-&quot;                                         |      1000 |       1912 |     1.9120 |     2.5401 |      0.0000 |      32.000 |
+ | &quot;# selected&quot;                                    |      1000 |         98 |   0.098000 |    0.31368 |      0.0000 |      3.0000 |
+ |*&quot;#accept&quot;                                       |      1000 |         94 |(  9.40000 +- 0.922843 )%|   -------   |   -------   |
+ |*&quot;#pass combcut&quot;                                 |     10403 |        254 |(  2.44160 +- 0.151318 )%|   -------   |   -------   |
+ |*&quot;#pass mother cut&quot;                              |       254 |         98 |(  38.5827 +- 3.05439  )%|   -------   |   -------   |
+Sel_Dstar         SUCCESS Number of counters : 14
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | &quot;# D*(2010)+ -&gt; D0  pi+ &quot;                       |        94 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# D*(2010)- -&gt; D~0  pi- &quot;                      |        94 |          1 |   0.010638 |    0.10259 |      0.0000 |      1.0000 |
+ | &quot;# D0&quot;                                          |        94 |         43 |    0.45745 |    0.49819 |      0.0000 |      1.0000 |
+ | &quot;# D~0&quot;                                         |        94 |         55 |    0.58511 |    0.51384 |      0.0000 |      2.0000 |
+ | &quot;# Phys/Sel_D0&quot;                                 |        94 |         98 |     1.0426 |    0.24904 |      1.0000 |      3.0000 |
+ | &quot;# Phys/StdAllNoPIDsPions&quot;                      |        94 |       4481 |     47.670 |     25.661 |      7.0000 |      153.00 |
+ | &quot;# input particles&quot;                             |        94 |       4579 |     48.713 |     25.705 |      8.0000 |      154.00 |
+ | &quot;# pi+&quot;                                         |        94 |       2175 |     23.138 |     11.977 |      4.0000 |      58.000 |
+ | &quot;# pi-&quot;                                         |        94 |       2091 |     22.245 |     12.936 |      1.0000 |      90.000 |
+ | &quot;# selected&quot;                                    |        94 |          1 |   0.010638 |    0.10259 |      0.0000 |      1.0000 |
+ |*&quot;#accept&quot;                                       |        94 |          1 |(  1.06383 +- 1.05816  )%|   -------   |   -------   |
+ |*&quot;#pass combcut&quot;                                 |      2240 |        586 |(  26.1607 +- 0.928634 )%|   -------   |   -------   |
+ |*&quot;#pass mother cut&quot;                              |       586 |          1 |( 0.170648 +- 0.170503 )%|   -------   |   -------   |
+ | &quot;Error from IParticleCombiner, skip the combinat|         6 |          6 |     1.0000 |     0.0000 |      1.0000 |      1.0000 |</code></pre>
+<p>Here we have information of the input containers, types of particles, etc, with all the counters corresponding to our run on 1000 events.</p>
+<div id="understanding-the-log" class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="understanding-the-log" class="challenge panel panel-success"><span class="glyphicon glyphicon-pencil"></span>Understanding the log</h2>
+</div>
+<div class="panel-body">
+<p>How many <span class="math inline">\(D^*\)</span> do we expect in our ntuple? Can you check it? Can you change some cuts and see how he counters change? Try to free the <span class="math inline">\(D^*\)</span> mass and see if we get more of those.</p>
+</div>
+</div>
+<p>Now, let's make the particle builder fail silently and see if we can debug this. For example, imagine we forgot to add the Kaons as inputs in <code>Sel_D0</code>:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">d0_sel <span class="op">=</span> Selection(<span class="st">&#39;Sel_D0&#39;</span>,
+                   Algorithm<span class="op">=</span>d0,
+                   RequiredSelections<span class="op">=</span>[Pions])</code></pre></div>
+<p>Then we get</p>
+<pre><code>Sel_D0            SUCCESS Number of counters : 12
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | &quot;# D0 -&gt; pi-  K+ &quot;                              |      1000 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# D~0 -&gt; pi+  K- &quot;                             |      1000 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# K+&quot;                                          |      1000 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# K-&quot;                                          |      1000 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# Phys/StdAllNoPIDsPions&quot;                      |      1000 |      42328 |     42.328 |     26.566 |      3.0000 |      181.00 |
+ | &quot;# input particles&quot;                             |      1000 |      42328 |     42.328 |     26.566 |      3.0000 |      181.00 |
+ | &quot;# pi+&quot;                                         |      1000 |       1962 |     1.9620 |     2.3436 |      0.0000 |      26.000 |
+ | &quot;# pi-&quot;                                         |      1000 |       1912 |     1.9120 |     2.5401 |      0.0000 |      32.000 |
+ | &quot;# selected&quot;                                    |      1000 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ |*&quot;#accept&quot;                                       |      1000 |          0 |(  0.00000 +- 0.100000 )%|   -------   |   -------   |
+ | &quot;#pass combcut&quot;                                 |         0 |          0 |     0.0000 |     0.0000 | 1.7977e+308 |-1.7977e+308 |
+ | &quot;#pass mother cut&quot;                              |         0 |          0 |     0.0000 |     0.0000 | 1.7977e+308 |-1.7977e+308 |</code></pre>
+<p>It's easy to see we have 0 input kaons and we can see we only get input pions!</p>
+<p>Another problem: we messed up with a cut, for example in building the <span class="math inline">\(D^*\)</span>,</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">dstar_mother <span class="op">=</span> (
+    <span class="st">&quot;(abs(M-MAXTREE(&#39;D0&#39;==ABSID,M)-145.42) &lt; 10*MeV)&quot;</span>
+    <span class="st">&#39;&amp; (VFASPF(VCHI2/VDOF) &lt; 0)&#39;</span>
+)</code></pre></div>
+<p>Running this, we get</p>
+<pre><code>Sel_Dstar         SUCCESS Number of counters : 14
+ |    Counter                                      |     #     |    sum     | mean/eff^* | rms/err^*  |     min     |     max     |
+ | &quot;# D*(2010)+ -&gt; D0  pi+ &quot;                       |        94 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# D*(2010)- -&gt; D~0  pi- &quot;                      |        94 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ | &quot;# D0&quot;                                          |        94 |         43 |    0.45745 |    0.49819 |      0.0000 |      1.0000 |
+ | &quot;# D~0&quot;                                         |        94 |         55 |    0.58511 |    0.51384 |      0.0000 |      2.0000 |
+ | &quot;# Phys/Sel_D0&quot;                                 |        94 |         98 |     1.0426 |    0.24904 |      1.0000 |      3.0000 |
+ | &quot;# Phys/StdAllNoPIDsPions&quot;                      |        94 |       4481 |     47.670 |     25.661 |      7.0000 |      153.00 |
+ | &quot;# input particles&quot;                             |        94 |       4579 |     48.713 |     25.705 |      8.0000 |      154.00 |
+ | &quot;# pi+&quot;                                         |        94 |       2175 |     23.138 |     11.977 |      4.0000 |      58.000 |
+ | &quot;# pi-&quot;                                         |        94 |       2091 |     22.245 |     12.936 |      1.0000 |      90.000 |
+ | &quot;# selected&quot;                                    |        94 |          0 |     0.0000 |     0.0000 |      0.0000 |      0.0000 |
+ |*&quot;#accept&quot;                                       |        94 |          0 |(  0.00000 +- 1.06383  )%|   -------   |   -------   |
+ |*&quot;#pass combcut&quot;                                 |      2240 |        586 |(  26.1607 +- 0.928634 )%|   -------   |   -------   |
+ |*&quot;#pass mother cut&quot;                              |       586 |          0 |(  0.00000 +- 0.170648 )%|   -------   |   -------   |
+ | &quot;Error from IParticleCombiner, skip the combinat|         6 |          6 |     1.0000 |     0.0000 |      1.0000 |      1.0000 |</code></pre>
+<p>And we would get suspicious about the <code>MotherCut</code>...</p>
+<p>The final trick is to use the <code>StoreExplorerAlg</code>, which shows us the state of the TES in the middle of execution. We can configure it very easily and insert it in the DaVinci sequence to see what is happening.</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="im">from</span> Configurables <span class="im">import</span> StoreExplorerAlg
+
+DaVinci().UserAlgorithms <span class="op">+=</span> [StoreExplorerAlg(<span class="st">&quot;Before&quot;</span>),
+                             dstar_seq.sequence(),
+                             StoreExplorerAlg(<span class="st">&quot;After&quot;</span>)]</code></pre></div>
+<p>And then run it:</p>
+<pre><code>EventSelector     SUCCESS Reading Event record 1. Record number within stream 1: 1
+Before               INFO ========= /Event[0x224961d0@EventDataSvc]:
+Before               INFO +--&gt; /Event [Address: CLID=0x1 Type=0x2]  DataObject
+Before               INFO | +--&gt; /Gen [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /MC [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Link [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /pSim [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Rec [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Trigger [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Muon [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Rich [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Other [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /pRec [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Prev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /PrevPrev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Next [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /NextNext [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /DAQ [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO | +--&gt; /Strip [Address: CLID=0x1 Type=0x2]  (Unloaded)
+Before               INFO   +--&gt; /AllStreams [Address: CLID=0x1 Type=0x2]  (Unloaded)
+...
+After                INFO ========= /Event[0x224961d0@EventDataSvc]:
+After                INFO +--&gt; /Event [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | +--&gt; /Gen [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /MC [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Link [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /pSim [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Rec [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--&gt; /Header [Address: CLID=0x69 Type=0x2]  LHCb::RecHeader
+After                INFO | | +--&gt; /Status [Address: CLID=0x1389 Type=0x2]  (Unloaded)
+After                INFO | | +--&gt; /Summary [Address: CLID=0x6a Type=0x2]  (Unloaded)
+After                INFO | | +--&gt; /ProtoP [No Address]  DataObject
+After                INFO | | | +--&gt; /Charged [No Address]  KeyedContainer&lt;LHCb::ProtoPartic [38]
+After                INFO | | +--&gt; /Muon [No Address]  DataObject
+After                INFO | | | +--&gt; /MuonPID [No Address]  KeyedContainer&lt;LHCb::MuonPID,Con [27]
+After                INFO | | +--&gt; /Track [No Address]  DataObject
+After                INFO | | | +--&gt; /Best [No Address]  KeyedContainer&lt;LHCb::Track,Conta [70]
+After                INFO | | +--&gt; /Rich [No Address]  DataObject
+After                INFO | | | +--&gt; /PIDs [No Address]  KeyedContainer&lt;LHCb::RichPID,Con [46]
+After                INFO | | +--&gt; /Vertex [No Address]  DataObject
+After                INFO | |   +--&gt; /Primary [No Address]  KeyedContainer&lt;LHCb::RecVertex,C [2]
+After                INFO | +--&gt; /Trigger [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--&gt; /RawEvent [Address: CLID=0x3ea Type=0x2]  LHCb::RawEvent
+After                INFO | +--&gt; /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Muon [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Rich [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Other [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /pRec [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--&gt; /Track [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--&gt; /Best [Address: CLID=0x60e Type=0x2]  LHCb::PackedTracks
+After                INFO | | | +--&gt; /Muon [Address: CLID=0x60e Type=0x2]  (Unloaded)
+After                INFO | | +--&gt; /Rich [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--&gt; /PIDs [Address: CLID=0x619 Type=0x2]  LHCb::PackedRichPIDs
+After                INFO | | +--&gt; /Muon [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--&gt; /MuonPID [Address: CLID=0x623 Type=0x2]  LHCb::PackedMuonPIDs
+After                INFO | | +--&gt; /Calo [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | | +--&gt; /ProtoP [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--&gt; /Charged [Address: CLID=0x610 Type=0x2]  LHCb::PackedProtoParticles
+After                INFO | | | +--&gt; /Neutrals [Address: CLID=0x610 Type=0x2]  (Unloaded)
+After                INFO | | +--&gt; /Vertex [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | | +--&gt; /Primary [Address: CLID=0x611 Type=0x2]  LHCb::PackedRecVertices
+After                INFO | |   +--&gt; /V0 [Address: CLID=0x612 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Prev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /PrevPrev [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /Next [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /NextNext [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /DAQ [Address: CLID=0x1 Type=0x2]  DataObject
+After                INFO | | +--&gt; /ODIN [No Address]  LHCb::ODIN
+After                INFO | +--&gt; /Strip [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO | +--&gt; /AllStreams [Address: CLID=0x1 Type=0x2]  (Unloaded)
+After                INFO   +--&gt; /Phys [No Address]  DataObject
+After                INFO   | +--&gt; /StdAllNoPIDsPions [No Address]  DataObject
+After                INFO   | | +--&gt; /Particles [No Address]  KeyedContainer&lt;LHCb::Particle,Co [16]
+After                INFO   | | +--&gt; /decayVertices [No Address]  KeyedContainer&lt;LHCb::Vertex,Cont [0]
+After                INFO   | | +--&gt; /Particle2VertexRelations [No Address]  LHCb::Relation1D&lt;LHCb::Particle,
+After                INFO   | | +--&gt; /_RefitPVs [No Address]  KeyedContainer&lt;LHCb::RecVertex,C [0]
+After                INFO   | +--&gt; /StdAllLooseKaons [No Address]  DataObject
+After                INFO   | | +--&gt; /Particles [No Address]  KeyedContainer&lt;LHCb::Particle,Co [7]
+After                INFO   | | +--&gt; /decayVertices [No Address]  KeyedContainer&lt;LHCb::Vertex,Cont [0]
+After                INFO   | | +--&gt; /Particle2VertexRelations [No Address]  LHCb::Relation1D&lt;LHCb::Particle,
+After                INFO   | | +--&gt; /_RefitPVs [No Address]  KeyedContainer&lt;LHCb::RecVertex,C [0]
+After                INFO     +--&gt; /Sel_D0 [No Address]  DataObject
+After                INFO       +--&gt; /Particles [No Address]  KeyedContainer&lt;LHCb::Particle,Co [0]</code></pre>
+<p>Here we can see where our decays are being put and we can debug problems with inputs and outputs. It can also be useful to know where things are written for accessing them interactively, if we want to further explore and debug.</p>
+<div id="configuring-the-algorithm" class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="configuring-the-algorithm" class="callout panel panel-info"><span class="glyphicon glyphicon-pushpin"></span>Configuring the algorithm</h2>
+</div>
+<div class="panel-body">
+<p>The <code>StoreExplorerAlg</code> has the same print frequency as <code>DaVinci</code>, but it can be configured by modifying <code>PrintFreq</code> (fraction of events that are printed) or <code>PrintEvt</code>. Have a look at the <a href="http://lhcb-release-area.web.cern.ch/LHCb-release-area/DOC/moore/releases/v14r2p5/doxygen/d2/d3b/class_store_explorer_alg.html">class Doxygen</a> to see what they do.</p>
+</div>
+</div>
+        </div>
+      </div>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://software-carpentry.org">Software Carpentry</a>
+        <a class="label swc-blue-bg" href="https://github.com/lhcb/second-analysis-steps">Source</a>
+        <a class="label swc-blue-bg" href="mailto:lhcb-starterkit@cern.ch">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
+      </div>
+    </div>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/katex.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.5.1/contrib/auto-render.min.js"></script>
+    <script>
+      // Go KaTeX go!
+      renderMathInElement(document.body);
+    </script>
+  </body>
+</html>
