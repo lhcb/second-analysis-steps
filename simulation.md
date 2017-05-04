@@ -16,15 +16,15 @@ minutes: 60
 
 The LHCb simulation framework which steers the creation of simulated events and interfaces to multiple external applications. Most commonly, an event is created via the following procedure:
 
-1. The `ProductionTool` (Pythia, GenXicc, ...) generates an event with the required signal particle. Either by generating minimum bias events until a matching particle is found or by ensuring one is produced in every event.
+1. The `ProductionTool` (Pythia, GenXicc, ...) generates an event with the required signal particle. Either by generating minimum bias events until a matching particle is found or by ensuring one is produced in every event. The resulting event is comprised of either stable particles or unstable particles which are known to either EvtGen or Geant4 and can be decayed.
 2. The signal particle is decayed using the `DecayTool` (EvtGen) to the desired final state, all remaining unstable particles are decayed independently.
 3. The signal and its decay products might be required to pass generator level cuts implemented as a `CutTool`.
 4. Particles are transported through the detector simulation.
 
 > ## Things to remember {.callout}
 >
-> 1. The detector simulation is the **__by far__** most time consuming step (minutes). So make sure your generator cuts remove events you cannot possible reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!
-> 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true candidate is not required to pass.
+> 1. The detector simulation is **__by far__** the most time consuming step (minutes, compared to seconds for the rest). So make sure your generator cuts remove events you cannot possibly reconstruct or select later on. Additional options are available to increase the speed, please talk to your MC liaisons!
+> 2. The generator cuts are only applied to the signal that was forced to decay to the specific final state. _Any_ other true signal candidate is not required to pass.
 > 3. The number of generated events refers to the number entering step 4 above, so those passing the generator level cuts. __Not__ the number of events produced by the `ProductionTool` in the first step.
 
 ## Figuring out which option files to use and how to run Gauss
@@ -36,9 +36,12 @@ Imagine you need to know the option files and software versions used for a simul
 First, find the ProductionID:
 ![FindingProductionID](img/simulation_1.png)
 Search for this ID in the Transformation Monitor, right click the result and select "Show request". Right clicking and selecting "View" in the new window will open an overview about all the individual steps of the production with their application version and option files used.
-> Important: the order of the option files does matter!
-The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file, containing, for example:
 
+> ## Important: the order of the option files does matter! {.callout}
+> `'$DECFILESROOT/options/27163003.py' '$LBPYTHIA8ROOT/options/Pythia8.py'` produces the sample using Pythia 8 while 
+> `'$LBPYTHIA8ROOT/options/Pythia8.py' '$DECFILESROOT/options/27163003.py'` uses Pythia 6.
+
+The production system handles the necessary settings for initial event- and runnumber and the used database tags. In a private production, you need to set these yourself in an additional options file, containing, for example:
 ```python
 from Gauss.Configuration import GenInit
 
@@ -69,7 +72,7 @@ This would take 5 to 10 minutes due to the detector simulation, which can be tur
 
 ## Setting up a new Decay
 
-EvtGen is completely controlled via a specific file for each sample, known as a DecFile. Non-signal decays are produced according to DECAY.DEC, which contains all known (measured + some predicted) hadron decays. These live in the DecFiles package:
+EvtGen is completely controlled via a specific file for each sample, known as a DecFile. These live in the DecFiles package:
 https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles
 To understand what is produced in any simulated sample, you need to understand these. First, how to try them out.
 
@@ -201,7 +204,7 @@ https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf
 For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias...
 Similarly, the document specifies the conventions for the "NickName" - which also has to be the filename. Note that once MC has been produced from a given DecFile, it is not allowed to be changed, so you never need to worry about which version of DecFiles you are looking at when trying to understand existing samples.
 
-The "Cuts" field specifies which one of a predetermined set of cut tools are used. The best way to understand these is to look at the source code:
+The "Cuts" field specifies one of a set of C++ selections in:
 https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/
 
 ## Generator level cuts
@@ -245,14 +248,13 @@ This requires the addition of "TightCut" to the nickname.
 ## Generator cut efficiency
 
 The generator cut efficiency can be found from the GeneratorLog.xml file, which contains e.g:
-```xml
 <efficiency name = "generator level cut">
     <after> 5 </after>
     <before> 27 </before>
     <value> 0.18519 </value>
     <error> 0.074757 </error>
 </efficiency>
-```
+
 
 
 ## Controlling decays
@@ -294,7 +296,7 @@ CDecay MyD0
 #
 End
 ```
-This DecFile defines a signal B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of "MyD0". If the decay was to "D0" rather than "MyD0", the D0 would decay via all of the decay modes implemented in DECAY.DEC.
+This DecFile defines a Signa B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of "MyD0". If the decay was to "D0" rather than "MyD0", the D0 would decay via all of the decay modes implemented in DECAY.DEC.
 The final part of each decay is the actual physics model used - in this case "PHSP", which is phase space only (matrix element = constant). Note that with PHSP the daughters are completely unpolarized - for anything other than (spin 0) to (spin0 spin0) this will get the angular momentum wrong!
 
 #Two body decays - getting angular momentum right
@@ -371,7 +373,7 @@ CDecay MyD_s-
 Note that the fractions will always be renormalised to sum to 1 - you can directly use PDG branching fractions without having to rescale by hand.
 
 ## Final state radiation
-After generating the decay, final state radiation is added using PHOTOS. Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
+Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
 
 
 ## Changing particle masses / lifetimes/ widths
@@ -419,10 +421,8 @@ from Configurables import FilterDesktop
 line = 'Hlt2CharmHadD02KPi_XSecTurbo'
 Dzeros = AutomaticData('/Event/Turbo/'+line+'/Particles')
 
-decay = '[D0 --> K- pi+]CC'
-
 pt_selection = FilterDesktop(
-    'D0_PT_selector', Code="(CHILD(PT, '{0}') > 3000*MeV)".format(decay))
+    'D0_PT_selector', Code='PT')
 
 sel = Selection('D0_PT_selection',
                 Algorithm=pt_selection,
