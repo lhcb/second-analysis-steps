@@ -72,7 +72,7 @@ This would take 5 to 10 minutes due to the detector simulation, which can be tur
 
 ## Setting up a new Decay
 
-EvtGen is completely controlled via a specific file for each sample, known as a DecFile. These live in the DecFiles package:
+EvtGen is completely controlled via a specific file for each sample, known as a DecFile. Non-signal decays are produced according to DECAY.DEC, which contains all known (measured + some predicted) hadron decays. These live in the DecFiles package:
 https://gitlab.cern.ch/LHCb-SVN-mirrors/Gen-DecFiles/tree/master/dkfiles
 To understand what is produced in any simulated sample, you need to understand these. First, how to try them out.
 
@@ -204,7 +204,7 @@ https://cds.cern.ch/record/855452/files/lhcb-2005-034.pdf
 For example for the first digit of 1 = contains b quark, 2 = c quark, 3 = min bias...
 Similarly, the document specifies the conventions for the "NickName" - which also has to be the filename. Note that once MC has been produced from a given DecFile, it is not allowed to be changed, so you never need to worry about which version of DecFiles you are looking at when trying to understand existing samples.
 
-The "Cuts" field specifies one of a set of C++ selections in:
+The "Cuts" field specifies which one of a predetermined set of cut tools are used. The best way to understand these is to look at the source code:
 https://gitlab.cern.ch/lhcb/Gauss/blob/master/Gen/GenCuts/
 
 ## Generator level cuts
@@ -248,13 +248,14 @@ This requires the addition of "TightCut" to the nickname.
 ## Generator cut efficiency
 
 The generator cut efficiency can be found from the GeneratorLog.xml file, which contains e.g:
+```xml
 <efficiency name = "generator level cut">
     <after> 5 </after>
     <before> 27 </before>
     <value> 0.18519 </value>
     <error> 0.074757 </error>
 </efficiency>
-
+```
 
 
 ## Controlling decays
@@ -296,7 +297,7 @@ CDecay MyD0
 #
 End
 ```
-This DecFile defines a Signa B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of "MyD0". If the decay was to "D0" rather than "MyD0", the D0 would decay via all of the decay modes implemented in DECAY.DEC.
+This DecFile defines a signal B+ which decays 100% to D0 pi+, and the D0 in turn decays 100% into K- pi+. Important is the definition of "MyD0". If the decay was to "D0" rather than "MyD0", the D0 would decay via all of the decay modes implemented in DECAY.DEC.
 The final part of each decay is the actual physics model used - in this case "PHSP", which is phase space only (matrix element = constant). Note that with PHSP the daughters are completely unpolarized - for anything other than (spin 0) to (spin0 spin0) this will get the angular momentum wrong!
 
 #Two body decays - getting angular momentum right
@@ -373,7 +374,7 @@ CDecay MyD_s-
 Note that the fractions will always be renormalised to sum to 1 - you can directly use PDG branching fractions without having to rescale by hand.
 
 ## Final state radiation
-Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
+After generating the decay, final state radiation is added using PHOTOS. Note that PHOTOS is enabled by default, even though many decfiles explicitly specify it. It needs to be explicitly removed via "noPhotos"
 
 
 ## Changing particle masses / lifetimes/ widths
